@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Agendamiento</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --text-primary: #1a1a1a;
+            --text-secondary: #666;
+            --text-muted: #999;
+            --text-danger: #c41e3a;
+            --text-success: #0d7f2d;
+            --text-accent: #1d5fa5;
+            --surface-0: #f5f5f5;
+            --surface-1: #ffffff;
+            --surface-2: #ffffff;
+            --border: rgba(0, 0, 0, 0.1);
+            --border-strong: rgba(0, 0, 0, 0.2);
+            --bg-danger: #fce6e6;
+            --bg-success: #e6f5ed;
+            --bg-warning: #fff8e1;
+            --bg-accent: #e3f2fd;
+            --fill-accent: #1d5fa5;
+            --on-accent: #ffffff;
+            --fill-success: #0d7f2d;
+            --on-success: #ffffff;
+            --fill-secondary: rgba(0, 0, 0, 0.05);
+            --fill-disabled: rgba(0, 0, 0, 0.1);
+            --text-disabled: rgba(0, 0, 0, 0.4);
+            --radius: 8px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --text-primary: #e0e0e0;
+                --text-secondary: #999;
+                --text-muted: #666;
+                --text-danger: #ff6b6b;
+                --text-success: #51cf66;
+                --text-accent: #74b5f9;
+                --surface-0: #1a1a1a;
+                --surface-1: #262626;
+                --surface-2: #2d2d2d;
+                --border: rgba(255, 255, 255, 0.1);
+                --border-strong: rgba(255, 255, 255, 0.2);
+                --bg-danger: #3a1f1f;
+                --bg-success: #1f3a2f;
+                --bg-warning: #3a3a1f;
+                --bg-accent: #1f2f3a;
+                --fill-accent: #2563eb;
+                --on-accent: #ffffff;
+                --fill-success: #22c55e;
+                --on-success: #000000;
+                --fill-secondary: rgba(255, 255, 255, 0.1);
+                --fill-disabled: rgba(255, 255, 255, 0.1);
+                --text-disabled: rgba(255, 255, 255, 0.4);
+            }
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--surface-0);
+            color: var(--text-primary);
+        }
+
+        input, select, button {
+            font-family: inherit;
+            font-size: inherit;
+        }
+
+        input, select {
+            padding: 10px;
+            border-radius: var(--radius);
+            border: 0.5px solid var(--border);
+            background: var(--surface-1);
+            color: var(--text-primary);
+        }
+
+        input:disabled, select:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        button {
+            padding: 10px 16px;
+            border: none;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-1px);
+            opacity: 0.9;
+        }
+
+        button:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .container {
+            padding: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--surface-1);
+            border: 0.5px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .alert {
+            padding: 12px;
+            border-radius: var(--radius);
+            margin-bottom: 1rem;
+            font-size: 14px;
+        }
+
+        .alert-danger {
+            background: var(--bg-danger);
+            color: var(--text-danger);
+        }
+
+        .alert-success {
+            background: var(--bg-success);
+            color: var(--text-success);
+        }
+
+        .alert-warning {
+            background: var(--bg-warning);
+            color: #856404;
+        }
+
+        h1, h2, h3 {
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        h2 { font-size: 20px; }
+        h3 { font-size: 16px; }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 1rem;
+        }
+
+        label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .stat {
+            background: var(--surface-2);
+            padding: 12px;
+            border-radius: var(--radius);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .btn-primary {
+            background: var(--fill-accent);
+            color: var(--on-accent);
+        }
+
+        .btn-success {
+            background: var(--fill-success);
+            color: var(--on-success);
+        }
+
+        .btn-secondary {
+            background: var(--fill-secondary);
+            color: var(--text-primary);
+            border: 0.5px solid var(--border-strong);
+        }
+
+        .btn-danger {
+            background: var(--bg-danger);
+            color: var(--text-danger);
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .notification-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--fill-accent);
+            color: var(--on-accent);
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 4px;
+        }
+
+        .block-item, .reservation-item {
+            padding: 12px;
+            background: var(--surface-1);
+            border-radius: var(--radius);
+            border: 0.5px solid var(--border);
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .block-info, .reservation-info {
+            flex: 1;
+        }
+
+        .block-time, .reservation-name {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .block-coach, .reservation-email {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .block-status {
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .status-available {
+            color: var(--text-success);
+        }
+
+        .status-reserved {
+            color: var(--text-danger);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .notification-panel {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 8px;
+            background: var(--surface-1);
+            border: 0.5px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            width: 320px;
+            max-height: 300px;
+            overflow-y: auto;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+        }
+
+        .notification-item {
+            padding: 8px;
+            border-bottom: 0.5px solid var(--border);
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        .notification-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .notification-title {
+            font-weight: 500;
+            color: var(--text-accent);
+        }
+
+        .notification-message {
+            color: var(--text-primary);
+            margin-top: 4px;
+        }
+
+        .notification-time {
+            color: var(--text-muted);
+            font-size: 11px;
+            margin-top: 4px;
+        }
+
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .notification-wrapper {
+            position: relative;
+        }
+
+        .scroll-list {
+            max-height: 400px;
+            overflow-y: auto;
+            display: grid;
+            gap: 8px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .grid-2 {
+                gap: 1rem;
+            }
+
+            .card {
+                padding: 1rem;
+            }
+
+            h2 { font-size: 18px; }
+            h3 { font-size: 14px; }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function SchedulingApp() {
+            const [userRole, setUserRole] = useState(null);
+            const [adminCode, setAdminCode] = useState('');
+            const [blocks, setBlocks] = useState([]);
+            const [reservations, setReservations] = useState([]);
+            const [newBlockTime, setNewBlockTime] = useState('');
+            const [newBlockCoach, setNewBlockCoach] = useState('');
+            const [selectedOption1, setSelectedOption1] = useState('');
+            const [selectedOption2, setSelectedOption2] = useState('');
+            const [studentName, setStudentName] = useState('');
+            const [studentEmail, setStudentEmail] = useState('');
+            const [errorMsg, setErrorMsg] = useState('');
+            const [successMsg, setSuccessMsg] = useState('');
+            const [newNotifications, setNewNotifications] = useState([]);
+            const [showNotifications, setShowNotifications] = useState(false);
+
+            const ADMIN_CODE = '2024COACH';
+
+            useEffect(() => {
+                const saved = localStorage.getItem('schedulingData');
+                if (saved) {
+                    try {
+                        const data = JSON.parse(saved);
+                        setBlocks(data.blocks || []);
+                        setReservations(data.reservations || []);
+                    } catch (e) {
+                        console.error('Error loading data:', e);
+                    }
+                }
+            }, []);
+
+            useEffect(() => {
+                localStorage.setItem('schedulingData', JSON.stringify({ blocks, reservations }));
+            }, [blocks, reservations]);
+
+            const addBlock = () => {
+                setErrorMsg('');
+                setSuccessMsg('');
+                if (!newBlockTime || !newBlockCoach) {
+                    setErrorMsg('Por favor completa todos los campos');
+                    return;
+                }
+                const newBlock = {
+                    id: Date.now(),
+                    time: newBlockTime,
+                    coach: newBlockCoach,
+                    reserved: false
+                };
+                setBlocks([...blocks, newBlock]);
+                setNewBlockTime('');
+                setNewBlockCoach('');
+                setSuccessMsg('Bloque creado correctamente');
+            };
+
+            const makeReservation = () => {
+                setErrorMsg('');
+                setSuccessMsg('');
+
+                if (!selectedOption1 && !selectedOption2) {
+                    setErrorMsg('Selecciona al menos una opción de bloque');
+                    return;
+                }
+
+                if (!studentName || !studentEmail) {
+                    setErrorMsg('Por favor completa tu nombre y email');
+                    return;
+                }
+
+                if (reservations.some(r => r.studentEmail === studentEmail)) {
+                    setErrorMsg('Ya tienes una reserva. Solo se permite una por persona');
+                    return;
+                }
+
+                const block1 = selectedOption1 ? blocks.find(b => b.id == selectedOption1) : null;
+                const block2 = selectedOption2 ? blocks.find(b => b.id == selectedOption2) : null;
+
+                if (block1 && block1.reserved) {
+                    setErrorMsg('Tu opción 1 ya fue reservada. Intenta con otra');
+                    return;
+                }
+
+                if (block2 && block2.reserved) {
+                    setErrorMsg('Tu opción 2 ya fue reservada. Intenta con otra');
+                    return;
+                }
+
+                let selectedBlock = block1 && !block1.reserved ? block1 : block2;
+
+                if (!selectedBlock) {
+                    setErrorMsg('No hay bloques disponibles');
+                    return;
+                }
+
+                const newReservation = {
+                    id: Date.now(),
+                    blockId: selectedBlock.id,
+                    blockTime: selectedBlock.time,
+                    coach: selectedBlock.coach,
+                    studentName,
+                    studentEmail,
+                    option1: block1 ? block1.time : null,
+                    option2: block2 ? block2.time : null,
+                    date: new Date().toLocaleDateString(),
+                    timestamp: new Date().toLocaleTimeString()
+                };
+
+                setReservations([...reservations, newReservation]);
+                setBlocks(blocks.map(b => 
+                    b.id == selectedBlock.id ? { ...b, reserved: true } : b
+                ));
+
+                setNewNotifications([...newNotifications, {
+                    id: Date.now(),
+                    message: `${studentName} (${studentEmail}) reservó ${selectedBlock.time}`,
+                    time: new Date().toLocaleTimeString(),
+                    studentEmail,
+                    studentName
+                }]);
+
+                setSelectedOption1('');
+                setSelectedOption2('');
+                setStudentName('');
+                setStudentEmail('');
+                setSuccessMsg('¡Reserva confirmada! Te enviaremos un email de confirmación');
+            };
+
+            const deleteReservation = (reservationId) => {
+                const reservation = reservations.find(r => r.id === reservationId);
+                if (reservation) {
+                    setReservations(reservations.filter(r => r.id !== reservationId));
+                    setBlocks(blocks.map(b => 
+                        b.id == reservation.blockId ? { ...b, reserved: false } : b
+                    ));
+                }
+            };
+
+            const deleteBlock = (blockId) => {
+                setBlocks(blocks.filter(b => b.id !== blockId));
+                const reservation = reservations.find(r => r.blockId === blockId);
+                if (reservation) {
+                    setReservations(reservations.filter(r => r.blockId !== blockId));
+                }
+            };
+
+            const exportToExcel = () => {
+                const data = reservations.map(r => ({
+                    'Nombre': r.studentName,
+                    'Email': r.studentEmail,
+                    'Opción 1': r.option1 || '-',
+                    'Opción 2': r.option2 || '-',
+                    'Bloque asignado': r.blockTime,
+                    'Coach': r.coach,
+                    'Fecha de reserva': r.date,
+                    'Hora de reserva': r.timestamp
+                }));
+
+                const ws = XLSX.utils.json_to_sheet(data);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Reservas');
+                XLSX.writeFile(wb, 'reservas_agendamiento.xlsx');
+            };
+
+            const generateEmailTemplate = (reservation) => {
+                return `Asunto: ✅ Confirmación de tu reserva - Sesión con ${reservation.coach}
+
+Hola ${reservation.studentName},
+
+¡Tu reserva fue confirmada exitosamente!
+
+📅 Detalles de tu sesión:
+• Horario: ${reservation.blockTime}
+• Coach: ${reservation.coach}
+• Fecha de reserva: ${reservation.date}
+
+📋 Opciones que seleccionaste:
+• Opción 1: ${reservation.option1 || 'No seleccionada'}
+• Opción 2: ${reservation.option2 || 'No seleccionada'}
+
+Nos vemos pronto!
+
+---
+Equipo del Curso`;
+            };
+
+            const copyEmailTemplate = (reservation) => {
+                const template = generateEmailTemplate(reservation);
+                navigator.clipboard.writeText(template);
+                alert('Template copiado. Puedes pegarlo en tu cliente de email');
+            };
+
+            const sendEmailViaForm = (reservation) => {
+                const subject = `✅ Confirmación de tu reserva - Sesión con ${reservation.coach}`;
+                const body = generateEmailTemplate(reservation);
+                window.location.href = `mailto:${reservation.studentEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            };
+
+            if (!userRole) {
+                return (
+                    <div className="container" style={{ maxWidth: '500px' }}>
+                        <h2>Sistema de Agendamiento</h2>
+                        <div className="button-group">
+                            <button className="btn-primary" onClick={() => setUserRole('admin-login')}>
+                                Administrador
+                            </button>
+                            <button className="btn-secondary" onClick={() => setUserRole('student')}>
+                                Estudiante
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (userRole === 'admin-login') {
+                const [codeInput, setCodeInput] = useState('');
+                const [codeError, setCodeError] = useState('');
+
+                const handleCodeSubmit = () => {
+                    if (codeInput === ADMIN_CODE) {
+                        setAdminCode(ADMIN_CODE);
+                        setUserRole('admin');
+                    } else {
+                        setCodeError('Código incorrecto');
+                        setCodeInput('');
+                    }
+                };
+
+                return (
+                    <div className="container" style={{ maxWidth: '400px' }}>
+                        <button className="btn-secondary btn-small" onClick={() => setUserRole(null)}>
+                            ← Volver
+                        </button>
+                        <h2>Acceso Admin</h2>
+                        {codeError && <div className="alert alert-danger">{codeError}</div>}
+                        <div className="form-group">
+                            <input 
+                                type="password" 
+                                placeholder="Ingresa el código de acceso"
+                                value={codeInput}
+                                onChange={(e) => {
+                                    setCodeInput(e.target.value);
+                                    setCodeError('');
+                                }}
+                                onKeyPress={(e) => e.key === 'Enter' && handleCodeSubmit()}
+                            />
+                            <button className="btn-primary" onClick={handleCodeSubmit}>
+                                Acceder
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (userRole === 'admin') {
+                return (
+                    <div className="container">
+                        <div className="header-row">
+                            <h2>Panel de Administrador</h2>
+                            <div className="notification-wrapper">
+                                <button 
+                                    className="btn-secondary btn-small"
+                                    onClick={() => setShowNotifications(!showNotifications)}
+                                >
+                                    🔔 Notificaciones {newNotifications.length > 0 && <span className="notification-badge">{newNotifications.length}</span>}
+                                </button>
+                                {showNotifications && newNotifications.length > 0 && (
+                                    <div className="notification-panel">
+                                        {newNotifications.map(notif => (
+                                            <div key={notif.id} className="notification-item">
+                                                <div className="notification-title">✨ Reserva nueva</div>
+                                                <div className="notification-message">{notif.message}</div>
+                                                <div className="notification-time">{notif.time}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <button className="btn-secondary btn-small" onClick={() => { setUserRole(null); setAdminCode(''); }}>
+                            ← Salir
+                        </button>
+
+                        <div className="grid-2">
+                            <div className="card">
+                                <h3>Crear bloque de tiempo</h3>
+                                {errorMsg && <div className="alert alert-danger">{errorMsg}</div>}
+                                {successMsg && <div className="alert alert-success">{successMsg}</div>}
+                                <div className="form-group">
+                                    <input 
+                                        type="text" 
+                                        placeholder="Ej: Lunes 10:00-11:00"
+                                        value={newBlockTime}
+                                        onChange={(e) => setNewBlockTime(e.target.value)}
+                                    />
+                                    <input 
+                                        type="text" 
+                                        placeholder="Nombre del coach"
+                                        value={newBlockCoach}
+                                        onChange={(e) => setNewBlockCoach(e.target.value)}
+                                    />
+                                    <button className="btn-primary" onClick={addBlock}>
+                                        + Agregar bloque
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="card">
+                                <h3>Estado del sistema</h3>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '1rem' }}>
+                                    <div className="stat">
+                                        <div className="stat-label">Total bloques</div>
+                                        <div className="stat-value">{blocks.length}</div>
+                                    </div>
+                                    <div className="stat">
+                                        <div className="stat-label">Disponibles</div>
+                                        <div className="stat-value" style={{ color: 'var(--text-success)' }}>{blocks.filter(b => !b.reserved).length}</div>
+                                    </div>
+                                </div>
+                                <div className="stat" style={{ gridColumn: '1 / -1', marginBottom: '1rem' }}>
+                                    <div className="stat-label">Reservas confirmadas</div>
+                                    <div className="stat-value">{reservations.length}</div>
+                                </div>
+                                <button className="btn-success" onClick={exportToExcel} style={{ width: '100%' }}>
+                                    📥 Descargar Excel
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="grid-2">
+                            <div>
+                                <h3>Bloques disponibles ({blocks.filter(b => !b.reserved).length})</h3>
+                                {blocks.length === 0 ? (
+                                    <div style={{ padding: '1rem', color: 'var(--text-secondary)' }}>
+                                        No hay bloques creados
+                                    </div>
+                                ) : (
+                                    <div className="scroll-list">
+                                        {blocks.map(block => (
+                                            <div key={block.id} className="block-item">
+                                                <div className="block-info">
+                                                    <div className="block-time">{block.time}</div>
+                                                    <div className="block-coach">{block.coach}</div>
+                                                    <div className={`block-status ${block.reserved ? 'status-reserved' : 'status-available'}`}>
+                                                        {block.reserved ? '🔴 Reservado' : '🟢 Disponible'}
+                                                    </div>
+                                                </div>
+                                                <button className="btn-danger btn-small" onClick={() => deleteBlock(block.id)}>
+                                                    ✕
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div>
+                                <h3>Reservas confirmadas ({reservations.length})</h3>
+                                {reservations.length === 0 ? (
+                                    <div style={{ padding: '1rem', color: 'var(--text-secondary)' }}>
+                                        No hay reservas aún
+                                    </div>
+                                ) : (
+                                    <div className="scroll-list">
+                                        {reservations.map(reservation => (
+                                            <div key={reservation.id} className="card" style={{ marginBottom: 0 }}>
+                                                <div style={{ marginBottom: '8px' }}>
+                                                    <div className="reservation-name">{reservation.studentName}</div>
+                                                    <div className="reservation-email">{reservation.studentEmail}</div>
+                                                </div>
+                                                <div style={{ fontSize: '13px', color: 'var(--text-accent)', marginBottom: '6px' }}>
+                                                    📌 Asignado: {reservation.blockTime} ({reservation.coach})
+                                                </div>
+                                                <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px' }}>
+                                                    Opciones: {reservation.option1 ? `1: ${reservation.option1}` : '—'} | {reservation.option2 ? `2: ${reservation.option2}` : '—'}
+                                                </div>
+                                                <div className="action-buttons">
+                                                    <button className="btn-primary btn-small" onClick={() => sendEmailViaForm(reservation)}>
+                                                        ✉️ Email
+                                                    </button>
+                                                    <button className="btn-secondary btn-small" onClick={() => copyEmailTemplate(reservation)}>
+                                                        📋 Copiar
+                                                    </button>
+                                                    <button className="btn-danger btn-small" onClick={() => deleteReservation(reservation.id)}>
+                                                        Cancelar
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            const availableBlocks = blocks.filter(b => !b.reserved);
+            const hasAlreadyReserved = reservations.some(r => r.studentEmail === studentEmail && studentEmail);
+
+            return (
+                <div className="container" style={{ maxWidth: '600px' }}>
+                    <button className="btn-secondary btn-small" onClick={() => setUserRole(null)}>
+                        ← Volver
+                    </button>
+
+                    <h2>Reservar tu sesión</h2>
+
+                    {errorMsg && <div className="alert alert-danger">⚠️ {errorMsg}</div>}
+                    {successMsg && <div className="alert alert-success">✅ {successMsg}</div>}
+
+                    <div className="form-group">
+                        <label>Tu nombre</label>
+                        <input 
+                            type="text" 
+                            placeholder="Juan Pérez"
+                            value={studentName}
+                            onChange={(e) => setStudentName(e.target.value)}
+                            disabled={hasAlreadyReserved && studentEmail}
+                        />
+
+                        <label>Tu email</label>
+                        <input 
+                            type="email" 
+                            placeholder="tu@email.com"
+                            value={studentEmail}
+                            onChange={(e) => setStudentEmail(e.target.value)}
+                            disabled={hasAlreadyReserved}
+                        />
+                        {hasAlreadyReserved && (
+                            <div style={{ fontSize: '12px', color: 'var(--text-danger)' }}>
+                                ✓ Ya tienes una reserva. Una persona solo puede reservar una vez.
+                            </div>
+                        )}
+
+                        {!hasAlreadyReserved && (
+                            <>
+                                <label>⭐ Opción 1 (preferencia)</label>
+                                {availableBlocks.length === 0 ? (
+                                    <div className="alert alert-warning">
+                                        No hay bloques disponibles
+                                    </div>
+                                ) : (
+                                    <select 
+                                        value={selectedOption1}
+                                        onChange={(e) => setSelectedOption1(e.target.value)}
+                                    >
+                                        <option value="">Elige tu opción preferida...</option>
+                                        {availableBlocks.map(block => (
+                                            <option key={block.id} value={block.id}>
+                                                {block.time} - Coach: {block.coach}
+                                            </option>
+                                        ))}
+                                    </select>
+                                )}
+
+                                <label>⭐ Opción 2 (alternativa)</label>
+                                {availableBlocks.length === 0 ? (
+                                    <div className="alert alert-warning">
+                                        No hay bloques disponibles
+                                    </div>
+                                ) : (
+                                    <select 
+                                        value={selectedOption2}
+                                        onChange={(e) => setSelectedOption2(e.target.value)}
+                                    >
+                                        <option value="">Elige tu opción alternativa...</option>
+                                        {availableBlocks.map(block => (
+                                            <option key={block.id} value={block.id}>
+                                                {block.time} - Coach: {block.coach}
+                                            </option>
+                                        ))}
+                                    </select>
+                                )}
+                                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                                    💡 Se te asignará la opción 1 si está disponible, sino la opción 2
+                                </div>
+
+                                <button 
+                                    className="btn-success"
+                                    onClick={makeReservation}
+                                    disabled={availableBlocks.length === 0 || (!selectedOption1 && !selectedOption2)}
+                                >
+                                    ✓ Confirmar reserva
+                                </button>
+                            </>
+                        )}
+                    </div>
+
+                    {availableBlocks.length > 0 && (
+                        <div className="alert alert-success">
+                            📍 <strong>{availableBlocks.length} bloque{availableBlocks.length !== 1 ? 's' : ''} disponible{availableBlocks.length !== 1 ? 's' : ''}</strong> para reservar
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        ReactDOM.render(<SchedulingApp />, document.getElementById('root'));
+    </script>
+</body>
+</html>
