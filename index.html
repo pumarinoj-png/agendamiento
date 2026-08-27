@@ -174,7 +174,7 @@
                         <h2>Sistema de Agendamiento</h2>
                         <div class="button-group">
                             <button class="btn-primary" onclick="app.page='admin-login'; render()">Administrador</button>
-                            <button class="btn-secondary" onclick="app.page='student'; render()">Estudiante</button>
+                            <button class="btn-secondary" onclick="app.page='student'; render()">Participantes</button>
                         </div>
                     </div>
                 `;
@@ -226,6 +226,8 @@
                     <div class="grid-2">
                         <div class="card">
                             <h3>Crear Bloque Individual</h3>
+                            <label>Grupo</label>
+                            <input type="text" id="blockGroup" placeholder="Ej: Grupo A, Grupo B">
                             <label>Fecha</label>
                             <input type="date" id="blockDate" placeholder="">
                             <label>Horario (ej: 10:00-11:00)</label>
@@ -238,8 +240,8 @@
 
                         <div class="card">
                             <h3>Importar Múltiples Bloques</h3>
-                            <p><small>Copia desde Excel (Fecha | Hora | Coach) y pega aquí</small></p>
-                            <textarea id="importData" placeholder="2024-01-15	10:00-11:00	Juan&#10;2024-01-15	11:00-12:00	María" style="width: 100%; height: 120px; padding: 10px; border: 1px solid var(--border); border-radius: 4px; font-family: monospace; font-size: 12px;"></textarea>
+                            <p><small>Copia desde Excel (Grupo | Fecha | Hora | Coach) y pega aquí</small></p>
+                            <textarea id="importData" placeholder="Grupo A	2024-01-15	10:00-11:00	Juan&#10;Grupo A	2024-01-15	11:00-12:00	María&#10;Grupo B	2024-01-16	10:00-11:00	Carlos" style="width: 100%; height: 120px; padding: 10px; border: 1px solid var(--border); border-radius: 4px; font-family: monospace; font-size: 12px;"></textarea>
                             <button class="btn-primary" onclick="importBlocks()" style="margin-top: 10px;">📤 Importar Bloques</button>
                             <div id="importMsg"></div>
                         </div>
@@ -258,7 +260,7 @@
                                 ${app.blocks.length === 0 ? '<p>Sin bloques</p>' : app.blocks.map(b => `
                                     <div class="block-item">
                                         <div>
-                                            <strong>${b.date} ${b.time}</strong><br>
+                                            <strong>${b.group} - ${b.date} ${b.time}</strong><br>
                                             ${b.coach}
                                             <div class="status ${b.reserved ? 'status-reserved' : 'status-available'}">
                                                 ${b.reserved ? '🔴 Reservado' : '🟢 Disponible'}
@@ -277,6 +279,7 @@
                                     <div class="card">
                                         <strong>${r.studentName}</strong><br>
                                         ${r.studentEmail}<br>
+                                        <small>👥 ${r.group}</small><br>
                                         <small>📌 ${r.blockDate} ${r.blockTime} (${r.coach})</small><br>
                                         <small>Opción 1: ${r.option1 || '—'} | Opción 2: ${r.option2 || '—'}</small><br>
                                         <button class="btn-primary" onclick="sendEmail(${r.id})">✉️ Email</button>
@@ -306,14 +309,39 @@
         }
 
         function renderStudent() {
-            const availableBlocks = app.blocks.filter(b => !b.reserved);
+            const selectedGroup = app.form.selectedGroup;
+            const availableBlocks = app.blocks.filter(b => !b.reserved && b.group === selectedGroup);
             const hasReserved = app.reservations.some(r => r.studentEmail === (app.form.studentEmail || ''));
+            const allGroups = [...new Set(app.blocks.map(b => b.group))].sort();
             const appDiv = document.getElementById('app');
             
+            if (!selectedGroup) {
+                let html = `
+                    <div class="container" style="max-width: 600px;">
+                        <button class="btn-secondary" onclick="app.page='home'; render()">← Volver</button>
+                        <h2>Selecciona tu Grupo</h2>
+                        <div class="card">
+                            ${allGroups.length === 0 ? '<p>No hay grupos disponibles</p>' : `
+                                <div style="display: grid; gap: 10px;">
+                                    ${allGroups.map(group => `
+                                        <button class="btn-primary" onclick="app.form.selectedGroup='${group}'; renderStudent()" style="text-align: left; padding: 15px;">
+                                            <strong>${group}</strong><br>
+                                            <small>${app.blocks.filter(b => b.group === group && !b.reserved).length} sesiones disponibles</small>
+                                        </button>
+                                    `).join('')}
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                `;
+                appDiv.innerHTML = html;
+                return;
+            }
+
             let html = `
                 <div class="container" style="max-width: 600px;">
-                    <button class="btn-secondary" onclick="app.page='home'; render()">← Volver</button>
-                    <h2>Reservar Sesión</h2>
+                    <button class="btn-secondary" onclick="app.form.selectedGroup=''; renderStudent()">← Cambiar Grupo</button>
+                    <h2>Reservar Sesión - ${selectedGroup}</h2>
                     <div id="studentMsg"></div>
 
                     <div class="card">
@@ -342,28 +370,30 @@
                         ` : ''}
                     </div>
 
-                    ${availableBlocks.length > 0 ? `<div class="alert alert-success">📍 ${availableBlocks.length} bloques disponibles</div>` : ''}
+                    ${availableBlocks.length > 0 ? `<div class="alert alert-success">📍 ${availableBlocks.length} sesiones disponibles en ${selectedGroup}</div>` : ''}
                 </div>
             `;
             appDiv.innerHTML = html;
 
-            document.getElementById('studentName').addEventListener('input', (e) => { app.form.studentName = e.target.value; });
-            document.getElementById('studentEmail').addEventListener('input', (e) => { app.form.studentEmail = e.target.value; });
+            document.getElementById('studentName')?.addEventListener('input', (e) => { app.form.studentName = e.target.value; });
+            document.getElementById('studentEmail')?.addEventListener('input', (e) => { app.form.studentEmail = e.target.value; });
             document.getElementById('option1')?.addEventListener('change', (e) => { app.form.option1 = e.target.value; });
             document.getElementById('option2')?.addEventListener('change', (e) => { app.form.option2 = e.target.value; });
         }
 
         function addBlock() {
+            const group = document.getElementById('blockGroup').value;
             const date = document.getElementById('blockDate').value;
             const time = document.getElementById('blockTime').value;
             const coach = document.getElementById('blockCoach').value;
-            if (!date || !time || !coach) {
+            if (!group || !date || !time || !coach) {
                 document.getElementById('blockMsg').innerHTML = '<div class="alert alert-danger">Completa todos los campos</div>';
                 return;
             }
             const dateObj = new Date(date).toLocaleDateString('es-ES');
-            app.blocks.push({ id: Date.now(), date: dateObj, time, coach, reserved: false });
+            app.blocks.push({ id: Date.now(), group, date: dateObj, time, coach, reserved: false });
             saveData();
+            document.getElementById('blockGroup').value = '';
             document.getElementById('blockDate').value = '';
             document.getElementById('blockTime').value = '';
             document.getElementById('blockCoach').value = '';
@@ -384,12 +414,13 @@
 
             lines.forEach(line => {
                 const parts = line.split('\t');
-                if (parts.length >= 3) {
-                    const date = new Date(parts[0].trim()).toLocaleDateString('es-ES');
-                    const time = parts[1].trim();
-                    const coach = parts[2].trim();
-                    if (date && time && coach) {
-                        app.blocks.push({ id: Date.now() + Math.random(), date, time, coach, reserved: false });
+                if (parts.length >= 4) {
+                    const group = parts[0].trim();
+                    const date = new Date(parts[1].trim()).toLocaleDateString('es-ES');
+                    const time = parts[2].trim();
+                    const coach = parts[3].trim();
+                    if (group && date && time && coach) {
+                        app.blocks.push({ id: Date.now() + Math.random(), group, date, time, coach, reserved: false });
                         imported++;
                     }
                 } else {
@@ -403,12 +434,13 @@
                 document.getElementById('importData').value = '';
                 setTimeout(() => renderAdmin(), 800);
             } else {
-                document.getElementById('importMsg').innerHTML = '<div class="alert alert-danger">No se pudieron importar. Formato: Fecha [TAB] Hora [TAB] Coach</div>';
+                document.getElementById('importMsg').innerHTML = '<div class="alert alert-danger">No se pudieron importar. Formato: Grupo [TAB] Fecha [TAB] Hora [TAB] Coach</div>';
             }
         }
 
         function exportBlocksToExcel() {
             const data = app.blocks.map(b => ({
+                Grupo: b.group,
                 Fecha: b.date,
                 Hora: b.time,
                 Coach: b.coach,
@@ -449,6 +481,7 @@
             app.reservations.push({
                 id: Date.now(),
                 blockId: selected.id,
+                group: selected.group,
                 blockDate: selected.date,
                 blockTime: selected.time,
                 coach: selected.coach,
@@ -463,7 +496,7 @@
             app.blocks.find(b => b.id === selected.id).reserved = true;
             app.notifications.push({
                 id: Date.now(),
-                message: `${name} reservó ${selected.date} ${selected.time}`,
+                message: `${name} (${selected.group}) reservó ${selected.date} ${selected.time}`,
                 time: new Date().toLocaleTimeString()
             });
 
@@ -493,8 +526,8 @@
         function sendEmail(id) {
             const res = app.reservations.find(r => r.id === id);
             if (res) {
-                const subject = `✅ Confirmación - ${res.coach}`;
-                const body = `Hola ${res.studentName},\n\n✅ Reserva confirmada\n\n📅 Fecha: ${res.blockDate}\n⏰ Hora: ${res.blockTime}\n👨‍🏫 Coach: ${res.coach}\n\nOpción 1: ${res.option1 || '—'}\nOpción 2: ${res.option2 || '—'}\n\n¡Nos vemos pronto!`;
+                const subject = `✅ Confirmación - ${res.coach} (${res.group})`;
+                const body = `Hola ${res.studentName},\n\n✅ Reserva confirmada\n\n👥 Grupo: ${res.group}\n📅 Fecha: ${res.blockDate}\n⏰ Hora: ${res.blockTime}\n👨‍🏫 Coach: ${res.coach}\n\nOpción 1: ${res.option1 || '—'}\nOpción 2: ${res.option2 || '—'}\n\n¡Nos vemos pronto!`;
                 window.location.href = `mailto:${res.studentEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
             }
         }
@@ -502,7 +535,7 @@
         function copyEmail(id) {
             const res = app.reservations.find(r => r.id === id);
             if (res) {
-                const text = `Hola ${res.studentName},\n\n✅ Reserva confirmada\n\n📅 Fecha: ${res.blockDate}\n⏰ Hora: ${res.blockTime}\n👨‍🏫 Coach: ${res.coach}\n\nOpción 1: ${res.option1 || '—'}\nOpción 2: ${res.option2 || '—'}\n\n¡Nos vemos pronto!`;
+                const text = `Hola ${res.studentName},\n\n✅ Reserva confirmada\n\n👥 Grupo: ${res.group}\n📅 Fecha: ${res.blockDate}\n⏰ Hora: ${res.blockTime}\n👨‍🏫 Coach: ${res.coach}\n\nOpción 1: ${res.option1 || '—'}\nOpción 2: ${res.option2 || '—'}\n\n¡Nos vemos pronto!`;
                 navigator.clipboard.writeText(text);
                 alert('Email copiado');
             }
@@ -510,6 +543,7 @@
 
         function exportToExcel() {
             const data = app.reservations.map(r => ({
+                Grupo: r.group,
                 Nombre: r.studentName,
                 Email: r.studentEmail,
                 'Opción 1': r.option1 || '—',
