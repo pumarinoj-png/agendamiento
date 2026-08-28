@@ -8,7 +8,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
         :root {
             --text-primary: #1a1a1a;
             --text-secondary: #666;
@@ -21,181 +20,84 @@
             --text-danger: #721c24;
             --text-success: #155724;
         }
-
         @media (prefers-color-scheme: dark) {
             :root {
                 --text-primary: #e0e0e0;
                 --text-secondary: #999;
                 --surface-1: #262626;
                 --border: #444;
-                --bg-success: #1a3a1a;
-                --bg-danger: #3a1a1a;
-                --fill-accent: #0d6efd;
-                --fill-success: #198754;
             }
         }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #f5f5f5;
-            color: var(--text-primary);
-            padding: 20px;
-        }
-
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: var(--text-primary); padding: 20px; }
         .container { max-width: 900px; margin: 0 auto; }
-        
         h2 { margin: 20px 0; font-size: 24px; }
         h3 { margin: 15px 0 10px; font-size: 18px; }
+        h4 { margin: 10px 0 5px; }
         label { display: block; margin-top: 10px; font-weight: 500; }
-        input, select { 
-            width: 100%; 
-            padding: 10px; 
-            margin: 5px 0 15px; 
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            font-size: 14px;
-            background: var(--surface-1);
-            color: var(--text-primary);
-        }
-        button { 
-            padding: 10px 15px; 
-            margin: 5px 5px 5px 0; 
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 500;
-        }
+        input, select, textarea { width: 100%; padding: 10px; margin: 5px 0 15px; border: 1px solid var(--border); border-radius: 4px; font-size: 14px; background: var(--surface-1); color: var(--text-primary); font-family: inherit; }
+        button { padding: 10px 15px; margin: 5px 5px 5px 0; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; }
         .btn-primary { background: var(--fill-accent); color: white; }
         .btn-success { background: var(--fill-success); color: white; }
         .btn-secondary { background: #6c757d; color: white; }
         .btn-danger { background: #dc3545; color: white; }
         button:hover { opacity: 0.9; }
-        
         .alert { padding: 12px; margin: 10px 0; border-radius: 4px; }
         .alert-success { background: var(--bg-success); color: var(--text-success); }
         .alert-danger { background: var(--bg-danger); color: var(--text-danger); }
-        .alert-warning { background: #fff3cd; color: #856404; }
-        
         .card { background: var(--surface-1); padding: 15px; margin: 10px 0; border: 1px solid var(--border); border-radius: 8px; }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
-        
-        .block-item, .reservation-item { 
-            padding: 12px; 
-            margin: 8px 0; 
-            background: var(--surface-1); 
-            border: 1px solid var(--border); 
-            border-radius: 4px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .status { font-size: 12px; margin-top: 5px; }
-        .status-available { color: var(--text-success); }
-        .status-reserved { color: var(--text-danger); }
-        
-        .hidden { display: none; }
-        .button-group { display: flex; gap: 10px; }
+        .button-group { display: flex; gap: 10px; flex-wrap: wrap; }
         .flex { display: flex; justify-content: space-between; align-items: center; }
-        .notification-badge { 
-            display: inline-block; 
-            background: var(--fill-accent); 
-            color: white; 
-            border-radius: 50%; 
-            width: 20px; 
-            height: 20px; 
-            text-align: center; 
-            font-size: 12px;
-            line-height: 20px;
-        }
-        .notification-panel {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: var(--surface-1);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 15px;
-            width: 300px;
-            max-height: 400px;
-            overflow-y: auto;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            z-index: 1000;
-        }
-        .notification-item {
-            padding: 10px;
-            border-bottom: 1px solid var(--border);
-            font-size: 13px;
-            margin-bottom: 10px;
-        }
         .scroll-list { max-height: 400px; overflow-y: auto; }
+        small { display: block; margin: 5px 0; }
     </style>
 </head>
 <body>
     <div id="app"></div>
-
     <script>
-        // Inicializar Supabase
-        const SUPABASE_URL = 'https://tkwbpnpsyoixmfsgswlo.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRrd2JwbnBzeW9peG1mc2dzd2xvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5MTUwMTYsImV4cCI6MjEwMzQ5MTAxNn0.rTRxzhBcMRvJq_LkOu164_MAQNzYlYogIvv0Nm1BOy4';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        // Inicializar Supabase - SIN DUPLICADOS
+        window.sbClient = null;
+        
+        function initSupabase() {
+            const SUPABASE_URL = 'https://tkwbpnpsyoixmfsgswlo.supabase.co';
+            const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRrd2JwbnBzeW9peG1mc2dzd2xvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5MTUwMTYsImV4cCI6MjEwMzQ5MTAxNn0.rTRxzhBcMRvJq_LkOu164_MAQNzYlYogIvv0Nm1BOy4';
+            
+            if (!window.sbClient && window.supabase) {
+                window.sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            }
+            return window.sbClient;
+        }
 
         // Estado
         let app = {
             page: 'home',
             blocks: [],
             reservations: [],
-            notifications: [],
             adminCode: '2024COACH',
-            form: {},
-            loading: true
+            form: {}
         };
 
-        // Cargar datos desde Supabase
         async function loadData() {
             try {
-                app.loading = true;
+                const sb = initSupabase();
+                if (!sb) {
+                    setTimeout(loadData, 100);
+                    return;
+                }
+
+                const { data: blocksData } = await sb.from('blocks').select('*');
+                const { data: reservationsData } = await sb.from('reservations').select('*');
                 
-                // Cargar bloques
-                const { data: blocksData, error: blocksError } = await supabase
-                    .from('blocks')
-                    .select('*');
-                
-                if (blocksError) throw blocksError;
                 app.blocks = blocksData || [];
-                
-                // Cargar reservas
-                const { data: reservationsData, error: reservationsError } = await supabase
-                    .from('reservations')
-                    .select('*');
-                
-                if (reservationsError) throw reservationsError;
                 app.reservations = reservationsData || [];
-                
-                // Cargar notificaciones
-                const { data: notificationsData, error: notificationsError } = await supabase
-                    .from('notifications')
-                    .select('*');
-                
-                if (notificationsError) throw notificationsError;
-                app.notifications = notificationsData || [];
-                
-                app.loading = false;
                 render();
             } catch (error) {
-                console.error('Error cargando datos:', error);
-                app.loading = false;
-                render();
+                console.error('Error:', error);
+                setTimeout(loadData, 1000);
             }
         }
 
-        // Guardar datos en Supabase
-        async function saveData() {
-            // Los datos se guardan automáticamente en cada operación
-            // Esta función se mantiene para compatibilidad
-        }
-
-        // Renderizar
         function render() {
             const appDiv = document.getElementById('app');
             
@@ -210,16 +112,16 @@
                         </div>
                     </div>
                 `;
-            } 
+            }
             else if (app.page === 'admin-login') {
                 appDiv.innerHTML = `
                     <div class="container" style="max-width: 400px;">
                         <button class="btn-secondary" onclick="app.page='home'; render()">← Volver</button>
-                        <h2>Acceso Administrador</h2>
+                        <h2>Panel Administrador</h2>
                         <div class="card">
-                            <label>Código de acceso:</label>
+                            <label>Código de Acceso</label>
                             <input type="password" id="codeInput" placeholder="Ingresa el código">
-                            <button class="btn-primary" onclick="checkCode()">Acceder</button>
+                            <button class="btn-primary" onclick="checkCode()">Entrar</button>
                             <div id="codeMsg"></div>
                         </div>
                     </div>
@@ -248,473 +150,105 @@
         }
 
         function renderAdmin() {
-            const availableBlocks = app.blocks.filter(b => !b.reserved).length;
             const appDiv = document.getElementById('app');
-            
             let html = `
                 <div class="container">
                     <div class="flex">
                         <h2>Panel Administrador</h2>
                         <button class="btn-secondary" onclick="app.page='home'; render()">← Salir</button>
                     </div>
-
+                    
                     <div class="grid-2">
                         <div class="card">
-                            <h3>Crear Bloque Individual</h3>
+                            <h3>Crear Bloque</h3>
                             <label>Grupo</label>
-                            <input type="text" id="blockGroup" placeholder="Ej: Grupo A, Grupo B">
+                            <input type="text" id="blockGroup" placeholder="Ej: Grupo 01">
                             <label>Fecha</label>
-                            <input type="date" id="blockDate" placeholder="">
+                            <input type="date" id="blockDate">
                             <label>Horario (ej: 10:00-11:00)</label>
-                            <input type="text" id="blockTime" placeholder="">
-                            <label>Nombre Coach/Relator</label>
-                            <input type="text" id="blockCoach" placeholder="">
-                            <button class="btn-primary" onclick="addBlock()">+ Agregar Bloque</button>
+                            <input type="text" id="blockTime" placeholder="10:00-11:00">
+                            <label>Coach</label>
+                            <input type="text" id="blockCoach" placeholder="Nombre">
+                            <button class="btn-primary" onclick="addBlock()">+ Agregar</button>
                             <div id="blockMsg"></div>
                         </div>
 
                         <div class="card">
-                            <h3>Importar Múltiples Bloques</h3>
-                            <p><small>Copia desde Excel (Grupo | Fecha | Hora | Coach) y pega aquí</small></p>
-                            <textarea id="importData" placeholder="Grupo A	2024-01-15	10:00-11:00	Juan&#10;Grupo A	2024-01-15	11:00-12:00	María&#10;Grupo B	2024-01-16	10:00-11:00	Carlos" style="width: 100%; height: 120px; padding: 10px; border: 1px solid var(--border); border-radius: 4px; font-family: monospace; font-size: 12px;"></textarea>
-                            <button class="btn-primary" onclick="importBlocks()" style="margin-top: 10px;">📤 Importar Bloques</button>
+                            <h3>Importar Bloques</h3>
+                            <p><small>Copia desde Excel y pega aquí</small></p>
+                            <textarea id="importData" placeholder="Grupo01&#10;2024-01-15&#10;10:00-11:00&#10;Juan" style="height: 120px;"></textarea>
+                            <button class="btn-primary" onclick="importBlocks()">📤 Importar</button>
                             <div id="importMsg"></div>
                         </div>
                     </div>
 
-                    <div style="margin: 20px 0;">
-                        <p><strong>Estadísticas:</strong> Total: ${app.blocks.length} | Disponibles: ${availableBlocks} | Reservas: ${app.reservations.length} | Notificaciones: ${app.notifications.length}</p>
-                        <button class="btn-success" onclick="exportToExcel()">📥 Descargar Excel de Reservas</button>
-                        <button class="btn-secondary" onclick="exportBlocksToExcel()" style="margin-left: 5px;">📤 Descargar Bloques</button>
-                    </div>
-
-                    <div class="grid-2">
-                        <div>
-                            <h3>Bloques (${availableBlocks} disponibles)</h3>
-                            <div class="scroll-list">
-                                ${app.blocks.length === 0 ? '<p>Sin bloques</p>' : app.blocks.map(b => `
-                                    <div class="block-item">
-                                        <div>
-                                            <strong>${b.group} - ${b.date} ${b.time}</strong><br>
-                                            ${b.coach}
-                                            <div class="status ${b.reserved ? 'status-reserved' : 'status-available'}">
-                                                ${b.reserved ? '🔴 Reservado' : '🟢 Disponible'}
-                                            </div>
-                                        </div>
-                                        <button class="btn-danger" onclick="deleteBlock(${b.id})">✕</button>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-
-                        <div>
-                            <h3>Reservas por Grupo (${app.reservations.length})</h3>
-                            ${app.reservations.length === 0 ? '<p>Sin reservas</p>' : `
-                                ${[...new Set(app.reservations.map(r => r.group_name))].sort().map(group => `
-                                    <div style="margin-bottom: 20px; padding: 15px; background: var(--surface-1); border-radius: 4px; border-left: 4px solid var(--fill-accent);">
-                                        <h4 style="margin-bottom: 10px; color: var(--fill-accent);">📌 ${group} (${app.reservations.filter(r => r.group_name === group).length} reserva${app.reservations.filter(r => r.group_name === group).length !== 1 ? 's' : ''})</h4>
-                                        <div class="scroll-list">
-                                            ${app.reservations.filter(r => r.group_name === group).map(r => `
-                                                <div class="card" style="margin-bottom: 0;">
-                                                    <strong>${r.student_name}</strong><br>
-                                                    ${r.student_email}<br>
-                                                    <small>📌 <strong>Confirmada:</strong> ${r.block_date} ${r.block_time} (${r.coach})</small><br>
-                                                    <small><strong>Opción 1:</strong> ${r.option1_date || '—'} ${r.option1 || '—'}</small><br>
-                                                    <small><strong>Opción 2:</strong> ${r.option2_date || '—'} ${r.option2 || '—'}</small><br>
-                                                    <button class="btn-primary" onclick="sendEmail(${r.id})">✉️ Email</button>
-                                                    <button class="btn-secondary" onclick="copyEmail(${r.id})">📋 Copiar</button>
-                                                    <button class="btn-danger" onclick="deleteReservation(${r.id})">Cancelar</button>
-                                                </div>
-                                            `).join('')}
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            `}
-                        </div>
-                    </div>
-
-                    ${app.notifications.length > 0 ? `
-                        <div class="notification-panel">
-                            <h3>Notificaciones</h3>
-                            ${app.notifications.map(n => `
-                                <div class="notification-item">
-                                    <strong>✨ Reserva nueva</strong><br>
-                                    ${n.message}<br>
-                                    <small>${n.time}</small>
+                    <div class="card">
+                        <h3>Bloques (${app.blocks.length})</h3>
+                        <div class="scroll-list">
+                            ${app.blocks.map(b => `
+                                <div style="padding: 10px; border-bottom: 1px solid var(--border);">
+                                    <strong>${b.group_name}</strong> - ${b.date} ${b.time} (${b.coach})
+                                    <small style="color: ${b.reserved ? 'red' : 'green'};">${b.reserved ? '🔴 Reservado' : '🟢 Disponible'}</small>
+                                    <button class="btn-danger" onclick="deleteBlock(${b.id})" style="float: right;">Borrar</button>
                                 </div>
                             `).join('')}
                         </div>
-                    ` : ''}
-                </div>
-            `;
-            appDiv.innerHTML = html;
-        }
-
-        function renderChangeReservation() {
-            const appDiv = document.getElementById('app');
-            const searchEmail = app.form.searchEmail;
-            const currentReservation = searchEmail ? app.reservations.find(r => r.studentEmail === searchEmail) : null;
-            
-            if (!searchEmail || !currentReservation) {
-                let html = `
-                    <div class="container" style="max-width: 600px;">
-                        <button class="btn-secondary" onclick="app.page='home'; render()">← Volver</button>
-                        <h2>Cambiar mis Opciones</h2>
-                        <div id="changeMsg"></div>
-
-                        <div class="card">
-                            <label>Ingresa tu Email</label>
-                            <input type="email" id="searchEmail" placeholder="tu@email.com" value="${app.form.searchEmail || ''}">
-                            <button class="btn-primary" onclick="searchReservation()">Buscar mi Reserva</button>
-                        </div>
-
-                        <div style="margin-top: 20px; padding: 15px; background: var(--bg-warning); border-radius: 4px; font-size: 14px;">
-                            📝 Ingresa el email con el que hiciste tu reserva para cambiar tus opciones
-                        </div>
-                    </div>
-                `;
-                appDiv.innerHTML = html;
-                document.getElementById('searchEmail')?.addEventListener('input', (e) => { app.form.searchEmail = e.target.value; });
-                return;
-            }
-
-            // Mostrar reserva actual y opciones para cambiar
-            const availableBlocks = app.blocks.filter(b => b.group_name === currentReservation.group_name && !b.reserved);
-            
-            let html = `
-                <div class="container" style="max-width: 600px;">
-                    <button class="btn-secondary" onclick="app.form.searchEmail=''; app.form.newOption1=''; app.form.newOption2=''; renderChangeReservation()">← Buscar otra reserva</button>
-                    <h2>Cambiar mis Opciones</h2>
-                    <div id="changeMsg"></div>
-
-                    <div class="card" style="background: var(--bg-warning); border-left: 4px solid #856404; margin-bottom: 20px;">
-                        <h3>Tu Reserva Actual</h3>
-                        <p><strong>Nombre:</strong> ${currentReservation.student_name}</p>
-                        <p><strong>Grupo:</strong> ${currentReservation.group_name}</p>
-                        <p><strong>📌 Sesión Confirmada:</strong> ${currentReservation.block_date} ${currentReservation.block_time} (${currentReservation.coach})</p>
-                        <p style="font-size: 13px; margin-top: 10px;">
-                            <strong>Opción 1:</strong> ${currentReservation.option1_date || '—'} ${currentReservation.option1 || '—'}<br>
-                            <strong>Opción 2:</strong> ${currentReservation.option2_date || '—'} ${currentReservation.option2 || '—'}
-                        </p>
                     </div>
 
                     <div class="card">
-                        <h3>Cambiar mis opciones</h3>
-                        ${availableBlocks.length < 2 ? 
-                            '<p style="color: var(--text-danger);">Se necesitan al menos 2 sesiones disponibles para cambiar opciones</p>' 
-                            : `
-                                <label><strong>Nueva Opción 1 (Preferencia)</strong></label>
-                                <select id="newOption1">
-                                    <option value="">Elige...</option>
-                                    ${availableBlocks.map(b => `<option value="${b.id}">${b.date} ${b.time} - ${b.coach}</option>`).join('')}
-                                </select>
-
-                                <label><strong>Nueva Opción 2 (Alternativa)</strong></label>
-                                <select id="newOption2">
-                                    <option value="">Elige...</option>
-                                    ${availableBlocks.map(b => `<option value="${b.id}">${b.date} ${b.time} - ${b.coach}</option>`).join('')}
-                                </select>
-                                <small>💡 No puedes elegir la misma sesión dos veces</small><br><br>
-                                <button class="btn-success" onclick="confirmChangeOptions(${currentReservation.id})" style="margin-top: 15px;">✓ Cambiar mis Opciones</button>
-                            `
-                        }
+                        <h3>Reservas (${app.reservations.length})</h3>
+                        <div class="scroll-list">
+                            ${app.reservations.map(r => `
+                                <div style="padding: 10px; border-bottom: 1px solid var(--border);">
+                                    <strong>${r.student_name}</strong><br>
+                                    ${r.student_email}<br>
+                                    <small>📅 ${r.block_date} ${r.block_time} (${r.coach})</small><br>
+                                    <small>Opción 1: ${r.option1_date || '—'} ${r.option1 || '—'}</small><br>
+                                    <small>Opción 2: ${r.option2_date || '—'} ${r.option2 || '—'}</small><br>
+                                    <button class="btn-secondary" onclick="sendEmail(${r.id})">✉️ Email</button>
+                                    <button class="btn-danger" onclick="deleteReservation(${r.id})">Cancelar</button>
+                                </div>
+                            `).join('')}
+                        </div>
                     </div>
 
-                    <div style="margin-top: 20px; padding: 15px; background: var(--bg-success); border-radius: 4px; font-size: 13px;">
-                        ✅ Se actualizarán automáticamente tus dos opciones de sesión
-                    </div>
-                </div>
-            `;
-            appDiv.innerHTML = html;
-            document.getElementById('newOption1')?.addEventListener('change', (e) => { app.form.newOption1 = e.target.value; });
-            document.getElementById('newOption2')?.addEventListener('change', (e) => { app.form.newOption2 = e.target.value; });
-        }
-
-        function searchReservation() {
-            const email = document.getElementById('searchEmail').value;
-            if (!email) {
-                document.getElementById('changeMsg').innerHTML = '<div class="alert alert-danger">Ingresa tu email</div>';
-                return;
-            }
-            const reservation = app.reservations.find(r => r.student_email === email);
-            if (!reservation) {
-                document.getElementById('changeMsg').innerHTML = '<div class="alert alert-danger">No encontramos una reserva con este email</div>';
-                return;
-            }
-            app.form.searchEmail = email;
-            renderChangeReservation();
-        }
-
-        function confirmChangeReservation(reservationId) {
-            const newBlockId = app.form.newBlockId;
-            if (!newBlockId) {
-                document.getElementById('changeMsg').innerHTML = '<div class="alert alert-danger">Selecciona una nueva sesión</div>';
-                return;
-            }
-
-            const oldReservation = app.reservations.find(r => r.id === reservationId);
-            const newBlock = app.blocks.find(b => b.id == newBlockId);
-
-            if (!newBlock || newBlock.reserved) {
-                document.getElementById('changeMsg').innerHTML = '<div class="alert alert-danger">Esta sesión ya no está disponible</div>';
-                return;
-            }
-
-            // Liberar el bloque anterior
-            app.blocks.find(b => b.id === oldReservation.blockId).reserved = false;
-
-            // Actualizar la reserva
-            oldReservation.blockId = newBlock.id;
-            oldReservation.blockDate = newBlock.date;
-            oldReservation.blockTime = newBlock.time;
-            oldReservation.coach = newBlock.coach;
-
-            // Reservar el nuevo bloque
-            newBlock.reserved = true;
-
-            // Agregar notificación
-            app.notifications.push({
-                id: Date.now(),
-                message: `${oldReservation.studentName} (${oldReservation.group}) cambió a ${newBlock.date} ${newBlock.time}`,
-                time: new Date().toLocaleTimeString()
-            });
-
-            saveData();
-
-            // Mostrar confirmación
-            app.form.changeConfirm = true;
-            app.form.changedBlockInfo = `${newBlock.date} ${newBlock.time} - ${newBlock.coach}`;
-            renderChangeReservationConfirm(oldReservation);
-        }
-
-        async function confirmChangeOptions(reservationId) {
-            const newOption1 = app.form.newOption1;
-            const newOption2 = app.form.newOption2;
-
-            if (!newOption1 && !newOption2) {
-                document.getElementById('changeMsg').innerHTML = '<div class="alert alert-danger">Selecciona al menos una opción</div>';
-                return;
-            }
-
-            if (newOption1 && newOption2 && newOption1 === newOption2) {
-                document.getElementById('changeMsg').innerHTML = '<div class="alert alert-danger">No puedes elegir la misma sesión dos veces</div>';
-                return;
-            }
-
-            const oldReservation = app.reservations.find(r => r.id === reservationId);
-            const block1 = newOption1 ? app.blocks.find(b => b.id == newOption1) : null;
-            const block2 = newOption2 ? app.blocks.find(b => b.id == newOption2) : null;
-
-            if ((block1 && block1.reserved) || (block2 && block2.reserved)) {
-                document.getElementById('changeMsg').innerHTML = '<div class="alert alert-danger">Una de las sesiones seleccionadas ya no está disponible</div>';
-                return;
-            }
-
-            try {
-                // Actualizar la reserva en Supabase
-                const { error } = await supabase
-                    .from('reservations')
-                    .update({
-                        option1: block1?.time || null,
-                        option1_date: block1?.date || null,
-                        option2: block2?.time || null,
-                        option2_date: block2?.date || null
-                    })
-                    .eq('id', reservationId);
-                
-                if (error) throw error;
-
-                // Actualizar localmente
-                oldReservation.option1 = block1?.time || null;
-                oldReservation.option1_date = block1?.date || null;
-                oldReservation.option2 = block2?.time || null;
-                oldReservation.option2_date = block2?.date || null;
-
-                // Agregar notificación
-                await supabase
-                    .from('notifications')
-                    .insert([{
-                        id: Date.now() + Math.random(),
-                        message: `${oldReservation.student_name} (${oldReservation.group_name}) cambió sus opciones`,
-                        time: new Date().toLocaleTimeString()
-                    }]);
-
-                // Mostrar confirmación
-                app.form.changeConfirm = true;
-                app.form.changedOptionsInfo = `Opción 1: ${block1?.date || '—'} ${block1?.time || '—'} | Opción 2: ${block2?.date || '—'} ${block2?.time || '—'}`;
-                renderChangeOptionsConfirm(oldReservation);
-            } catch (error) {
-                console.error('Error:', error);
-                document.getElementById('changeMsg').innerHTML = '<div class="alert alert-danger">Error al cambiar opciones</div>';
-            }
-        }
-
-        function renderChangeOptionsConfirm(reservation) {
-            const appDiv = document.getElementById('app');
-            let html = `
-                <div class="container" style="max-width: 600px;">
-                    <h2>✅ ¡Cambio Realizado!</h2>
-                    <div class="card" style="background: var(--bg-success); border: 2px solid var(--text-success); padding: 20px; text-align: center;">
-                        <h3 style="color: var(--text-success); margin-bottom: 15px;">Tus opciones han sido actualizadas</h3>
-                        <p style="font-size: 15px; line-height: 1.6;">
-                            <strong>Hola ${reservation.student_name},</strong><br><br>
-                            Tus nuevas opciones han sido registradas exitosamente.<br><br>
-                            <strong>Tus nuevas opciones:</strong><br>
-                            📋 ${app.form.changedOptionsInfo}
-                        </p>
-                        <p style="margin-top: 20px; color: var(--text-secondary); font-size: 13px;">
-                            📧 Te enviaremos una confirmación a ${reservation.student_email}
-                        </p>
-                        <button class="btn-primary" onclick="app.page='home'; app.form.searchEmail=''; app.form.newOption1=''; app.form.newOption2=''; app.form.changeConfirm=false; render()" style="margin-top: 20px;">
-                            ← Volver al inicio
-                        </button>
-                    </div>
-                </div>
-            `;
-            appDiv.innerHTML = html;
-        }
-
-        function renderChangeReservationConfirm(reservation) {
-            const appDiv = document.getElementById('app');
-            let html = `
-                <div class="container" style="max-width: 600px;">
-                    <h2>✅ ¡Cambio Realizado!</h2>
-                    <div class="card" style="background: var(--bg-success); border: 2px solid var(--text-success); padding: 20px; text-align: center;">
-                        <h3 style="color: var(--text-success); margin-bottom: 15px;">Tu reserva ha sido cambiada</h3>
-                        <p style="font-size: 15px; line-height: 1.6;">
-                            <strong>Hola ${reservation.student_name},</strong><br><br>
-                            Tu cambio de sesión ha sido procesado exitosamente.<br><br>
-                            <strong>Tu nueva sesión:</strong><br>
-                            📅 ${app.form.changedBlockInfo}
-                        </p>
-                        <p style="margin-top: 20px; color: var(--text-secondary); font-size: 13px;">
-                            📧 Te enviaremos una confirmación a ${reservation.student_email}
-                        </p>
-                        <button class="btn-primary" onclick="app.page='home'; app.form.searchEmail=''; app.form.newBlockId=''; app.form.changeConfirm=false; render()" style="margin-top: 20px;">
-                            ← Volver al inicio
-                        </button>
-                    </div>
+                    <button class="btn-success" onclick="exportToExcel()">📥 Descargar Excel</button>
                 </div>
             `;
             appDiv.innerHTML = html;
         }
 
         function renderStudent() {
-            const selectedGroup = app.form.selectedGroup;
-            const availableBlocks = app.blocks.filter(b => !b.reserved && b.group === selectedGroup);
-            const hasReserved = app.reservations.some(r => r.studentEmail === (app.form.studentEmail || ''));
-            const allGroups = [...new Set(app.blocks.map(b => b.group))].sort();
             const appDiv = document.getElementById('app');
-
-            // Pantalla de confirmación después de reservar
-            if (app.form.confirmationMessage) {
-                let html = `
-                    <div class="container" style="max-width: 600px;">
-                        <h2>✅ ¡Reserva Recibida!</h2>
-                        <div class="card" style="background: var(--bg-success); border: 2px solid var(--text-success); padding: 20px; text-align: center;">
-                            <h3 style="color: var(--text-success); margin-bottom: 15px;">Tu solicitud ha sido enviada</h3>
-                            <p style="font-size: 15px; line-height: 1.6;">
-                                <strong>Hola ${app.form.studentName},</strong><br><br>
-                                Tu elección ha sido recibida. Te agendaremos en alguno de los bloques elegidos 
-                                <strong>priorizando la primera escogida</strong>.<br><br>
-                                Te pedimos reserves por ahora <strong>ambas fechas/hora</strong> 
-                                y te confirmaremos cuál queda definitivamente en breve.
-                            </p>
-                            <p style="margin-top: 20px; color: var(--text-secondary); font-size: 14px;">
-                                Detalles de tu solicitud:<br>
-                                <strong>Grupo:</strong> ${selectedGroup}<br>
-                                <strong>Email:</strong> ${app.form.studentEmail}<br>
-                                <strong>Opción 1:</strong> ${app.form.option1Label || '—'}<br>
-                                <strong>Opción 2:</strong> ${app.form.option2Label || '—'}
-                            </p>
-                            <button class="btn-primary" onclick="app.form.selectedGroup=''; app.form.confirmationMessage=false; app.form.studentName=''; app.form.studentEmail=''; app.form.option1=''; app.form.option2=''; app.page='home'; render()" style="margin-top: 20px;">
-                                ← Volver al inicio
-                            </button>
-                        </div>
-                    </div>
-                `;
-                appDiv.innerHTML = html;
-                return;
-            }
+            const groups = [...new Set(app.blocks.map(b => b.group_name))].sort();
             
-            if (!selectedGroup) {
-                let html = `
-                    <div class="container" style="max-width: 600px;">
-                        <button class="btn-secondary" onclick="app.page='home'; render()">← Volver</button>
-                        <h2>Selecciona tu Grupo</h2>
-                        <div class="card">
-                            ${allGroups.length === 0 ? `
-                                <div style="text-align: center; padding: 30px;">
-                                    <p style="font-size: 16px; color: var(--text-secondary);">📭 Sin sesiones disponibles en este momento</p>
-                                    <p style="font-size: 13px; margin-top: 10px;">El administrador aún no ha configurado los bloques de agendamiento.</p>
-                                    <p style="font-size: 13px; color: var(--text-secondary);">Por favor intenta más tarde.</p>
-                                </div>
-                            ` : `
-                                <div style="display: grid; gap: 10px;">
-                                    ${allGroups.map(group => `
-                                        <button class="btn-primary" onclick="app.form.selectedGroup='${group}'; renderStudent()" style="text-align: left; padding: 15px;">
-                                            <strong>${group}</strong><br>
-                                            <small>${app.blocks.filter(b => b.group === group && !b.reserved).length} sesiones disponibles</small>
-                                        </button>
-                                    `).join('')}
-                                </div>
-                            `}
-                        </div>
-                    </div>
-                `;
-                appDiv.innerHTML = html;
-                return;
-            }
-
-            let html = `
+            appDiv.innerHTML = `
                 <div class="container" style="max-width: 600px;">
-                    <button class="btn-secondary" onclick="app.form.selectedGroup=''; renderStudent()">← Cambiar Grupo</button>
-                    <h2>Reservar Sesión - ${selectedGroup}</h2>
-                    <div id="studentMsg"></div>
-
+                    <button class="btn-secondary" onclick="app.page='home'; render()">← Volver</button>
+                    <h2>Participantes</h2>
                     <div class="card">
-                        <label>Tu Nombre</label>
-                        <input type="text" id="studentName" value="${app.form.studentName || ''}" ${hasReserved ? 'disabled' : ''}>
-
-                        <label>Tu Email</label>
-                        <input type="email" id="studentEmail" value="${app.form.studentEmail || ''}" ${hasReserved ? 'disabled' : ''}>
-                        ${hasReserved ? '<div class="alert alert-success">✓ Ya tienes una reserva</div>' : ''}
-
-                        ${!hasReserved ? `
-                            <label>⭐ Opción 1 (Preferencia)</label>
-                            <select id="option1">
-                                <option value="">Elige...</option>
-                                ${availableBlocks.map(b => `<option value="${b.id}">${b.date} ${b.time} - ${b.coach}</option>`).join('')}
-                            </select>
-
-                            <label>⭐ Opción 2 (Alternativa)</label>
-                            <select id="option2">
-                                <option value="">Elige...</option>
-                                ${availableBlocks.map(b => `<option value="${b.id}">${b.date} ${b.time} - ${b.coach}</option>`).join('')}
-                            </select>
-                            <small>💡 Se asignará opción 1 si está disponible, sino opción 2</small><br><br>
-
-                            <button class="btn-success" onclick="makeReservation()" ${availableBlocks.length === 0 ? 'disabled' : ''}>✓ Confirmar Reserva</button>
-                        ` : ''}
+                        <p>Grupos disponibles: ${groups.length}</p>
+                        ${groups.map(g => `
+                            <button class="btn-primary" onclick="alert('Próximamente: Reservar en ' + '${g}')" style="width: 100%; text-align: left; margin: 10px 0;">
+                                ${g} - ${app.blocks.filter(b => b.group_name === g && !b.reserved).length} sesiones
+                            </button>
+                        `).join('')}
                     </div>
-
-                    ${availableBlocks.length > 0 ? `<div class="alert alert-success">📍 ${availableBlocks.length} sesiones disponibles en ${selectedGroup}</div>` : ''}
                 </div>
             `;
-            appDiv.innerHTML = html;
+        }
 
-            document.getElementById('studentName')?.addEventListener('input', (e) => { app.form.studentName = e.target.value; });
-            document.getElementById('studentEmail')?.addEventListener('input', (e) => { app.form.studentEmail = e.target.value; });
-            document.getElementById('option1')?.addEventListener('change', (e) => { 
-                app.form.option1 = e.target.value;
-                const block = app.blocks.find(b => b.id == e.target.value);
-                app.form.option1Label = block ? `${block.date} ${block.time}` : '';
-            });
-            document.getElementById('option2')?.addEventListener('change', (e) => { 
-                app.form.option2 = e.target.value;
-                const block = app.blocks.find(b => b.id == e.target.value);
-                app.form.option2Label = block ? `${block.date} ${block.time}` : '';
-            });
+        function renderChangeReservation() {
+            const appDiv = document.getElementById('app');
+            appDiv.innerHTML = `
+                <div class="container" style="max-width: 600px;">
+                    <button class="btn-secondary" onclick="app.page='home'; render()">← Volver</button>
+                    <h2>Cambiar mi Reserva</h2>
+                    <div class="card">
+                        <p>Próximamente: Sistema de cambio de opciones</p>
+                    </div>
+                </div>
+            `;
         }
 
         async function addBlock() {
@@ -722,30 +256,37 @@
             const date = document.getElementById('blockDate').value;
             const time = document.getElementById('blockTime').value;
             const coach = document.getElementById('blockCoach').value;
+            
             if (!group || !date || !time || !coach) {
                 document.getElementById('blockMsg').innerHTML = '<div class="alert alert-danger">Completa todos los campos</div>';
                 return;
             }
-            const dateObj = new Date(date).toLocaleDateString('es-ES');
-            const blockId = Date.now();
-            
+
             try {
-                const { error } = await supabase
-                    .from('blocks')
-                    .insert([{ id: blockId, group_name: group, date: dateObj, time, coach, reserved: false }]);
+                const sb = initSupabase();
+                const dateObj = new Date(date).toLocaleDateString('es-ES');
                 
+                const { error } = await sb.from('blocks').insert([{
+                    id: Date.now(),
+                    group_name: group,
+                    date: dateObj,
+                    time,
+                    coach,
+                    reserved: false
+                }]);
+
                 if (error) throw error;
-                
-                app.blocks.push({ id: blockId, group, date: dateObj, time, coach, reserved: false });
+
                 document.getElementById('blockGroup').value = '';
                 document.getElementById('blockDate').value = '';
                 document.getElementById('blockTime').value = '';
                 document.getElementById('blockCoach').value = '';
-                document.getElementById('blockMsg').innerHTML = '<div class="alert alert-success">Bloque creado</div>';
-                setTimeout(() => renderAdmin(), 500);
+                document.getElementById('blockMsg').innerHTML = '<div class="alert alert-success">✓ Bloque creado</div>';
+                
+                await loadData();
             } catch (error) {
                 console.error('Error:', error);
-                document.getElementById('blockMsg').innerHTML = '<div class="alert alert-danger">Error al crear bloque</div>';
+                document.getElementById('blockMsg').innerHTML = '<div class="alert alert-danger">Error: ' + error.message + '</div>';
             }
         }
 
@@ -756,252 +297,75 @@
                 return;
             }
 
-            const lines = data.trim().split('\n');
-            let imported = 0;
-            let errors = 0;
-            const blocksToInsert = [];
+            try {
+                const sb = initSupabase();
+                const lines = data.trim().split('\n');
+                const blocksToInsert = [];
 
-            lines.forEach(line => {
-                const parts = line.split('\t');
-                if (parts.length >= 4) {
-                    const group = parts[0].trim();
-                    const date = new Date(parts[1].trim()).toLocaleDateString('es-ES');
-                    const time = parts[2].trim();
-                    const coach = parts[3].trim();
-                    if (group && date && time && coach) {
-                        blocksToInsert.push({ 
-                            id: Date.now() + Math.random(), 
-                            group_name: group, 
-                            date, 
-                            time, 
-                            coach, 
-                            reserved: false 
-                        });
-                        imported++;
-                    }
-                } else {
-                    errors++;
-                }
-            });
-
-            if (imported > 0) {
-                try {
-                    const { error } = await supabase
-                        .from('blocks')
-                        .insert(blocksToInsert);
+                for (let i = 0; i < lines.length; i += 4) {
+                    const group = lines[i]?.trim();
+                    const date = lines[i+1]?.trim();
+                    const time = lines[i+2]?.trim();
+                    const coach = lines[i+3]?.trim();
                     
+                    if (group && date && time && coach) {
+                        const dateObj = new Date(date).toLocaleDateString('es-ES');
+                        blocksToInsert.push({
+                            id: Date.now() + Math.random(),
+                            group_name: group,
+                            date: dateObj,
+                            time,
+                            coach,
+                            reserved: false
+                        });
+                    }
+                }
+
+                if (blocksToInsert.length > 0) {
+                    const { error } = await sb.from('blocks').insert(blocksToInsert);
                     if (error) throw error;
                     
-                    // Actualizar app.blocks localmente
-                    blocksToInsert.forEach(b => {
-                        app.blocks.push({ 
-                            id: b.id, 
-                            group: b.group_name, 
-                            date: b.date, 
-                            time: b.time, 
-                            coach: b.coach, 
-                            reserved: false 
-                        });
-                    });
-                    
-                    document.getElementById('importMsg').innerHTML = `<div class="alert alert-success">✅ Importados ${imported} bloques ${errors > 0 ? `(${errors} errores)` : ''}</div>`;
+                    document.getElementById('importMsg').innerHTML = `<div class="alert alert-success">✓ Importados ${blocksToInsert.length} bloques</div>`;
                     document.getElementById('importData').value = '';
-                    setTimeout(() => renderAdmin(), 800);
-                } catch (error) {
-                    console.error('Error:', error);
-                    document.getElementById('importMsg').innerHTML = '<div class="alert alert-danger">Error al importar bloques</div>';
+                    await loadData();
                 }
-            } else {
-                document.getElementById('importMsg').innerHTML = '<div class="alert alert-danger">No se pudieron importar. Formato: Grupo [TAB] Fecha [TAB] Hora [TAB] Coach</div>';
-            }
-        }
-
-        function exportBlocksToExcel() {
-            const data = app.blocks.map(b => ({
-                Grupo: b.group,
-                Fecha: b.date,
-                Hora: b.time,
-                Coach: b.coach,
-                Estado: b.reserved ? 'Reservado' : 'Disponible'
-            }));
-            const ws = XLSX.utils.json_to_sheet(data);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Bloques');
-            XLSX.writeFile(wb, 'bloques_agendamiento.xlsx');
-        }
-
-        async function makeReservation() {
-            const name = document.getElementById('studentName').value;
-            const email = document.getElementById('studentEmail').value;
-            const opt1 = document.getElementById('option1').value;
-            const opt2 = document.getElementById('option2').value;
-
-            if (!name || !email || (!opt1 && !opt2)) {
-                document.getElementById('studentMsg').innerHTML = '<div class="alert alert-danger">Completa todos los campos</div>';
-                return;
-            }
-
-            if (opt1 && opt2 && opt1 === opt2) {
-                document.getElementById('studentMsg').innerHTML = '<div class="alert alert-danger">La opción 1 y opción 2 no pueden ser la misma sesión</div>';
-                return;
-            }
-
-            if (app.reservations.some(r => r.student_email === email)) {
-                document.getElementById('studentMsg').innerHTML = '<div class="alert alert-danger">Ya tienes una reserva</div>';
-                return;
-            }
-
-            const block1 = opt1 ? app.blocks.find(b => b.id == opt1) : null;
-            const block2 = opt2 ? app.blocks.find(b => b.id == opt2) : null;
-
-            const selected = (block1 && !block1.reserved) ? block1 : block2;
-
-            if (!selected || selected.reserved) {
-                document.getElementById('studentMsg').innerHTML = '<div class="alert alert-danger">Bloque no disponible</div>';
-                return;
-            }
-
-            try {
-                const reservationId = Date.now();
-                
-                // Insertar reserva
-                const { error: resError } = await supabase
-                    .from('reservations')
-                    .insert([{
-                        id: reservationId,
-                        block_id: selected.id,
-                        group_name: selected.group,
-                        block_date: selected.date,
-                        block_time: selected.time,
-                        coach: selected.coach,
-                        student_name: name,
-                        student_email: email,
-                        option1: block1?.time || null,
-                        option1_date: block1?.date || null,
-                        option2: block2?.time || null,
-                        option2_date: block2?.date || null,
-                        date_created: new Date().toLocaleDateString(),
-                        timestamp: new Date().toLocaleTimeString()
-                    }]);
-                
-                if (resError) throw resError;
-                
-                // Actualizar bloque como reserved
-                const { error: blockError } = await supabase
-                    .from('blocks')
-                    .update({ reserved: true })
-                    .eq('id', selected.id);
-                
-                if (blockError) throw blockError;
-                
-                // Insertar notificación
-                const { error: notifError } = await supabase
-                    .from('notifications')
-                    .insert([{
-                        id: Date.now() + Math.random(),
-                        message: `${name} (${selected.group}) reservó ${selected.date} ${selected.time}`,
-                        time: new Date().toLocaleTimeString()
-                    }]);
-                
-                if (notifError) throw notifError;
-                
-                // Actualizar estado local
-                app.reservations.push({
-                    id: reservationId,
-                    block_id: selected.id,
-                    group_name: selected.group,
-                    block_date: selected.date,
-                    block_time: selected.time,
-                    coach: selected.coach,
-                    student_name: name,
-                    student_email: email,
-                    option1: block1?.time || null,
-                    option1_date: block1?.date || null,
-                    option2: block2?.time || null,
-                    option2_date: block2?.date || null,
-                    date_created: new Date().toLocaleDateString(),
-                    timestamp: new Date().toLocaleTimeString()
-                });
-                
-                app.blocks.find(b => b.id === selected.id).reserved = true;
-                
-                app.form.confirmationMessage = true;
-                renderStudent();
             } catch (error) {
                 console.error('Error:', error);
-                document.getElementById('studentMsg').innerHTML = '<div class="alert alert-danger">Error al hacer la reserva</div>';
+                document.getElementById('importMsg').innerHTML = '<div class="alert alert-danger">Error: ' + error.message + '</div>';
             }
         }
 
         async function deleteBlock(id) {
             try {
-                // Borrar reservas asociadas
-                await supabase
-                    .from('reservations')
-                    .delete()
-                    .eq('block_id', id);
-                
-                // Borrar bloque
-                const { error } = await supabase
-                    .from('blocks')
-                    .delete()
-                    .eq('id', id);
-                
-                if (error) throw error;
-                
-                app.blocks = app.blocks.filter(b => b.id !== id);
-                app.reservations = app.reservations.filter(r => r.block_id !== id);
-                renderAdmin();
+                const sb = initSupabase();
+                await sb.from('reservations').delete().eq('block_id', id);
+                await sb.from('blocks').delete().eq('id', id);
+                await loadData();
             } catch (error) {
                 console.error('Error:', error);
-                alert('Error al eliminar bloque');
             }
         }
 
         async function deleteReservation(id) {
-            const res = app.reservations.find(r => r.id === id);
-            if (res) {
-                try {
-                    // Liberar el bloque
-                    await supabase
-                        .from('blocks')
-                        .update({ reserved: false })
-                        .eq('id', res.block_id);
-                    
-                    // Borrar reserva
-                    const { error } = await supabase
-                        .from('reservations')
-                        .delete()
-                        .eq('id', id);
-                    
-                    if (error) throw error;
-                    
-                    app.reservations = app.reservations.filter(r => r.id !== id);
-                    const block = app.blocks.find(b => b.id === res.block_id);
-                    if (block) block.reserved = false;
-                    renderAdmin();
-                } catch (error) {
-                    console.error('Error:', error);
-                    alert('Error al cancelar reserva');
+            try {
+                const sb = initSupabase();
+                const res = app.reservations.find(r => r.id === id);
+                if (res) {
+                    await sb.from('blocks').update({ reserved: false }).eq('id', res.block_id);
+                    await sb.from('reservations').delete().eq('id', id);
+                    await loadData();
                 }
+            } catch (error) {
+                console.error('Error:', error);
             }
         }
 
         function sendEmail(id) {
             const res = app.reservations.find(r => r.id === id);
             if (res) {
-                const subject = `✅ Confirmación - ${res.coach} (${res.group_name})`;
-                const body = `Hola ${res.student_name},\n\n✅ Reserva confirmada\n\n👥 Grupo: ${res.group_name}\n📅 Fecha: ${res.block_date}\n⏰ Hora: ${res.block_time}\n👨‍🏫 Coach: ${res.coach}\n\nOpciones elegidas:\nOpción 1: ${res.option1_date || '—'} ${res.option1 || '—'}\nOpción 2: ${res.option2_date || '—'} ${res.option2 || '—'}\n\n¡Nos vemos pronto!`;
+                const subject = `Confirmación - ${res.coach}`;
+                const body = `Hola ${res.student_name},\n\n✓ Reserva confirmada\n\nGrupo: ${res.group_name}\nFecha: ${res.block_date}\nHora: ${res.block_time}\nCoach: ${res.coach}\n\n¡Nos vemos!`;
                 window.location.href = `mailto:${res.student_email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-            }
-        }
-
-        function copyEmail(id) {
-            const res = app.reservations.find(r => r.id === id);
-            if (res) {
-                const text = `Hola ${res.student_name},\n\n✅ Reserva confirmada\n\n👥 Grupo: ${res.group_name}\n📅 Fecha: ${res.block_date}\n⏰ Hora: ${res.block_time}\n👨‍🏫 Coach: ${res.coach}\n\nOpciones elegidas:\nOpción 1: ${res.option1_date || '—'} ${res.option1 || '—'}\nOpción 2: ${res.option2_date || '—'} ${res.option2 || '—'}\n\n¡Nos vemos pronto!`;
-                navigator.clipboard.writeText(text);
-                alert('Email copiado');
             }
         }
 
@@ -1010,13 +374,9 @@
                 Grupo: r.group_name,
                 Nombre: r.student_name,
                 Email: r.student_email,
-                'Opción 1': r.option1 || '—',
-                'Opción 2': r.option2 || '—',
                 Fecha: r.block_date,
                 Hora: r.block_time,
-                Coach: r.coach,
-                'Fecha Reserva': r.date_created,
-                'Hora Reserva': r.timestamp
+                Coach: r.coach
             }));
             const ws = XLSX.utils.json_to_sheet(data);
             const wb = XLSX.utils.book_new();
@@ -1026,7 +386,6 @@
 
         // Iniciar
         loadData();
-        render();
     </script>
 </body>
 </html>
