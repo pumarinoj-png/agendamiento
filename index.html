@@ -149,6 +149,19 @@
             }
         }
 
+        function optLabel(r, n) {
+            const fecha = r['option' + n + '_date'];
+            const hora = r['option' + n];
+            if (!fecha && !hora) return '—';
+            let coach = r['option' + n + '_coach'];
+            // Fallback para reservas antiguas sin coach guardado
+            if (!coach) {
+                const b = app.blocks.find(x => x.group_name === r.group_name && x.date === fecha && x.time === hora);
+                coach = b ? b.coach : null;
+            }
+            return `${fecha || ''} · ${hora || ''}${coach ? ' · ' + coach : ''}`;
+        }
+
         function renderAdmin() {
             const appDiv = document.getElementById('app');
             let html = `
@@ -206,8 +219,8 @@
                                             <strong>${r.student_name}</strong><br>
                                             ${r.student_email}
                                             <small>📌 <strong>Asignada:</strong> ${r.block_date} · ${r.block_time} · ${r.coach}</small>
-                                            <small><strong>Opción 1:</strong> ${r.option1_date || '—'} ${r.option1 || ''}</small>
-                                            <small><strong>Opción 2:</strong> ${r.option2_date || '—'} ${r.option2 || ''}</small>
+                                            <small><strong>Opción 1:</strong> ${optLabel(r, 1)}</small>
+                                            <small><strong>Opción 2:</strong> ${optLabel(r, 2)}</small>
                                             <button class="btn-secondary" onclick="sendEmail(${r.id})">✉️ Email</button>
                                             <button class="btn-danger" onclick="deleteReservation(${r.id})">Cancelar</button>
                                         </div>
@@ -356,8 +369,10 @@
                     student_email: email,
                     option1: block1 ? block1.time : null,
                     option1_date: block1 ? block1.date : null,
+                    option1_coach: block1 ? block1.coach : null,
                     option2: block2 ? block2.time : null,
                     option2_date: block2 ? block2.date : null,
+                    option2_coach: block2 ? block2.coach : null,
                     date_created: new Date().toLocaleDateString('es-ES'),
                     timestamp: new Date().toLocaleTimeString('es-ES')
                 }]);
@@ -432,8 +447,8 @@
                         <small><strong>Nombre:</strong> ${reserva.student_name}</small>
                         <small><strong>Grupo:</strong> ${reserva.group_name}</small>
                         <small><strong>Asignada:</strong> ${reserva.block_date} · ${reserva.block_time} · ${reserva.coach}</small>
-                        <small><strong>Opción 1:</strong> ${reserva.option1_date || '—'} ${reserva.option1 || ''}</small>
-                        <small><strong>Opción 2:</strong> ${reserva.option2_date || '—'} ${reserva.option2 || ''}</small>
+                        <small><strong>Opción 1:</strong> ${optLabel(reserva, 1)}</small>
+                        <small><strong>Opción 2:</strong> ${optLabel(reserva, 2)}</small>
                     </div>
 
                     <div class="card">
@@ -512,8 +527,10 @@
                     coach: nueva.coach,
                     option1: block1 ? block1.time : null,
                     option1_date: block1 ? block1.date : null,
+                    option1_coach: block1 ? block1.coach : null,
                     option2: block2 ? block2.time : null,
-                    option2_date: block2 ? block2.date : null
+                    option2_date: block2 ? block2.date : null,
+                    option2_coach: block2 ? block2.coach : null
                 }).eq('id', reservationId);
                 if (error) throw error;
 
@@ -644,7 +661,7 @@
             const res = app.reservations.find(r => r.id === id);
             if (res) {
                 const subject = `Confirmación - ${res.coach}`;
-                const body = `Hola ${res.student_name},\n\n✓ Reserva confirmada\n\nGrupo: ${res.group_name}\nFecha: ${res.block_date}\nHora: ${res.block_time}\nCoach: ${res.coach}\n\n¡Nos vemos!`;
+                const body = `Hola ${res.student_name},\n\n✓ Reserva confirmada\n\nGrupo: ${res.group_name}\nFecha: ${res.block_date}\nHora: ${res.block_time}\nCoach: ${res.coach}\n\nOpciones que elegiste:\nOpción 1: ${optLabel(res, 1)}\nOpción 2: ${optLabel(res, 2)}\n\n¡Nos vemos!`;
                 window.location.href = `mailto:${res.student_email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
             }
         }
@@ -659,8 +676,10 @@
                 Coach: r.coach,
                 'Opción 1 Fecha': r.option1_date || '',
                 'Opción 1 Hora': r.option1 || '',
+                'Opción 1 Coach': r.option1_coach || '',
                 'Opción 2 Fecha': r.option2_date || '',
                 'Opción 2 Hora': r.option2 || '',
+                'Opción 2 Coach': r.option2_coach || '',
                 'Reservado el': r.date_created || ''
             }));
             const ws = XLSX.utils.json_to_sheet(data);
