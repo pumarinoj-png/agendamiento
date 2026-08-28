@@ -175,6 +175,7 @@
                         <div class="button-group">
                             <button class="btn-primary" onclick="app.page='admin-login'; render()">Administrador</button>
                             <button class="btn-secondary" onclick="app.page='student'; render()">Participantes</button>
+                            <button class="btn-secondary" onclick="app.page='change-reservation'; render()">Cambiar mi Reserva</button>
                         </div>
                     </div>
                 `;
@@ -199,6 +200,9 @@
             }
             else if (app.page === 'student') {
                 renderStudent();
+            }
+            else if (app.page === 'change-reservation') {
+                renderChangeReservation();
             }
         }
 
@@ -273,21 +277,27 @@
                         </div>
 
                         <div>
-                            <h3>Reservas (${app.reservations.length})</h3>
-                            <div class="scroll-list">
-                                ${app.reservations.length === 0 ? '<p>Sin reservas</p>' : app.reservations.map(r => `
-                                    <div class="card">
-                                        <strong>${r.studentName}</strong><br>
-                                        ${r.studentEmail}<br>
-                                        <small>👥 ${r.group}</small><br>
-                                        <small>📌 ${r.blockDate} ${r.blockTime} (${r.coach})</small><br>
-                                        <small>Opción 1: ${r.option1 || '—'} | Opción 2: ${r.option2 || '—'}</small><br>
-                                        <button class="btn-primary" onclick="sendEmail(${r.id})">✉️ Email</button>
-                                        <button class="btn-secondary" onclick="copyEmail(${r.id})">📋 Copiar</button>
-                                        <button class="btn-danger" onclick="deleteReservation(${r.id})">Cancelar</button>
+                            <h3>Reservas por Grupo (${app.reservations.length})</h3>
+                            ${app.reservations.length === 0 ? '<p>Sin reservas</p>' : `
+                                ${[...new Set(app.reservations.map(r => r.group))].sort().map(group => `
+                                    <div style="margin-bottom: 20px; padding: 15px; background: var(--surface-1); border-radius: 4px; border-left: 4px solid var(--fill-accent);">
+                                        <h4 style="margin-bottom: 10px; color: var(--fill-accent);">📌 ${group} (${app.reservations.filter(r => r.group === group).length} reserva${app.reservations.filter(r => r.group === group).length !== 1 ? 's' : ''})</h4>
+                                        <div class="scroll-list">
+                                            ${app.reservations.filter(r => r.group === group).map(r => `
+                                                <div class="card" style="margin-bottom: 0;">
+                                                    <strong>${r.studentName}</strong><br>
+                                                    ${r.studentEmail}<br>
+                                                    <small>📌 ${r.blockDate} ${r.blockTime} (${r.coach})</small><br>
+                                                    <small>Opción 1: ${r.option1 || '—'} | Opción 2: ${r.option2 || '—'}</small><br>
+                                                    <button class="btn-primary" onclick="sendEmail(${r.id})">✉️ Email</button>
+                                                    <button class="btn-secondary" onclick="copyEmail(${r.id})">📋 Copiar</button>
+                                                    <button class="btn-danger" onclick="deleteReservation(${r.id})">Cancelar</button>
+                                                </div>
+                                            `).join('')}
+                                        </div>
                                     </div>
                                 `).join('')}
-                            </div>
+                            `}
                         </div>
                     </div>
 
@@ -308,12 +318,195 @@
             appDiv.innerHTML = html;
         }
 
+        function renderChangeReservation() {
+            const appDiv = document.getElementById('app');
+            const searchEmail = app.form.searchEmail;
+            const currentReservation = searchEmail ? app.reservations.find(r => r.studentEmail === searchEmail) : null;
+            
+            if (!searchEmail || !currentReservation) {
+                let html = `
+                    <div class="container" style="max-width: 600px;">
+                        <button class="btn-secondary" onclick="app.page='home'; render()">← Volver</button>
+                        <h2>Cambiar mi Reserva</h2>
+                        <div id="changeMsg"></div>
+
+                        <div class="card">
+                            <label>Ingresa tu Email</label>
+                            <input type="email" id="searchEmail" placeholder="tu@email.com" value="${app.form.searchEmail || ''}">
+                            <button class="btn-primary" onclick="searchReservation()">Buscar mi Reserva</button>
+                        </div>
+
+                        <div style="margin-top: 20px; padding: 15px; background: var(--bg-warning); border-radius: 4px; font-size: 14px;">
+                            📝 Ingresa el email con el que hiciste tu reserva para cambiar de horario
+                        </div>
+                    </div>
+                `;
+                appDiv.innerHTML = html;
+                document.getElementById('searchEmail')?.addEventListener('input', (e) => { app.form.searchEmail = e.target.value; });
+                return;
+            }
+
+            // Mostrar reserva actual y opciones para cambiar
+            const availableBlocks = app.blocks.filter(b => b.group === currentReservation.group && !b.reserved && b.id !== currentReservation.blockId);
+            
+            let html = `
+                <div class="container" style="max-width: 600px;">
+                    <button class="btn-secondary" onclick="app.form.searchEmail=''; app.form.newBlockId=''; renderChangeReservation()">← Buscar otra reserva</button>
+                    <h2>Cambiar mi Reserva</h2>
+                    <div id="changeMsg"></div>
+
+                    <div class="card" style="background: var(--bg-warning); border-left: 4px solid #856404; margin-bottom: 20px;">
+                        <h3>Tu Reserva Actual</h3>
+                        <p><strong>Nombre:</strong> ${currentReservation.studentName}</p>
+                        <p><strong>Grupo:</strong> ${currentReservation.group}</p>
+                        <p><strong>📅 Fecha:</strong> ${currentReservation.blockDate}</p>
+                        <p><strong>⏰ Hora:</strong> ${currentReservation.blockTime}</p>
+                        <p><strong>👨‍🏫 Coach:</strong> ${currentReservation.coach}</p>
+                    </div>
+
+                    <div class="card">
+                        <h3>Cambiar a otra sesión</h3>
+                        ${availableBlocks.length === 0 ? 
+                            '<p style="color: var(--text-danger);">No hay otras sesiones disponibles en tu grupo en este momento</p>' 
+                            : `
+                                <label>Selecciona una nueva sesión</label>
+                                <select id="newBlockSelect">
+                                    <option value="">Elige una nueva sesión...</option>
+                                    ${availableBlocks.map(b => `<option value="${b.id}">${b.date} ${b.time} - ${b.coach}</option>`).join('')}
+                                </select>
+                                <button class="btn-success" onclick="confirmChangeReservation(${currentReservation.id})" style="margin-top: 15px;">✓ Cambiar a esta Sesión</button>
+                            `
+                        }
+                    </div>
+
+                    <div style="margin-top: 20px; padding: 15px; background: var(--bg-success); border-radius: 4px; font-size: 13px;">
+                        ✅ Al cambiar, se liberará automáticamente tu sesión anterior para que otros participantes puedan reservar
+                    </div>
+                </div>
+            `;
+            appDiv.innerHTML = html;
+            document.getElementById('newBlockSelect')?.addEventListener('change', (e) => { app.form.newBlockId = e.target.value; });
+        }
+
+        function searchReservation() {
+            const email = document.getElementById('searchEmail').value;
+            if (!email) {
+                document.getElementById('changeMsg').innerHTML = '<div class="alert alert-danger">Ingresa tu email</div>';
+                return;
+            }
+            const reservation = app.reservations.find(r => r.studentEmail === email);
+            if (!reservation) {
+                document.getElementById('changeMsg').innerHTML = '<div class="alert alert-danger">No encontramos una reserva con este email</div>';
+                return;
+            }
+            app.form.searchEmail = email;
+            renderChangeReservation();
+        }
+
+        function confirmChangeReservation(reservationId) {
+            const newBlockId = app.form.newBlockId;
+            if (!newBlockId) {
+                document.getElementById('changeMsg').innerHTML = '<div class="alert alert-danger">Selecciona una nueva sesión</div>';
+                return;
+            }
+
+            const oldReservation = app.reservations.find(r => r.id === reservationId);
+            const newBlock = app.blocks.find(b => b.id == newBlockId);
+
+            if (!newBlock || newBlock.reserved) {
+                document.getElementById('changeMsg').innerHTML = '<div class="alert alert-danger">Esta sesión ya no está disponible</div>';
+                return;
+            }
+
+            // Liberar el bloque anterior
+            app.blocks.find(b => b.id === oldReservation.blockId).reserved = false;
+
+            // Actualizar la reserva
+            oldReservation.blockId = newBlock.id;
+            oldReservation.blockDate = newBlock.date;
+            oldReservation.blockTime = newBlock.time;
+            oldReservation.coach = newBlock.coach;
+
+            // Reservar el nuevo bloque
+            newBlock.reserved = true;
+
+            // Agregar notificación
+            app.notifications.push({
+                id: Date.now(),
+                message: `${oldReservation.studentName} (${oldReservation.group}) cambió a ${newBlock.date} ${newBlock.time}`,
+                time: new Date().toLocaleTimeString()
+            });
+
+            saveData();
+
+            // Mostrar confirmación
+            app.form.changeConfirm = true;
+            app.form.changedBlockInfo = `${newBlock.date} ${newBlock.time} - ${newBlock.coach}`;
+            renderChangeReservationConfirm(oldReservation);
+        }
+
+        function renderChangeReservationConfirm(reservation) {
+            const appDiv = document.getElementById('app');
+            let html = `
+                <div class="container" style="max-width: 600px;">
+                    <h2>✅ ¡Cambio Realizado!</h2>
+                    <div class="card" style="background: var(--bg-success); border: 2px solid var(--text-success); padding: 20px; text-align: center;">
+                        <h3 style="color: var(--text-success); margin-bottom: 15px;">Tu reserva ha sido cambiada</h3>
+                        <p style="font-size: 15px; line-height: 1.6;">
+                            <strong>Hola ${reservation.studentName},</strong><br><br>
+                            Tu cambio de sesión ha sido procesado exitosamente.<br><br>
+                            <strong>Tu nueva sesión:</strong><br>
+                            📅 ${app.form.changedBlockInfo}
+                        </p>
+                        <p style="margin-top: 20px; color: var(--text-secondary); font-size: 13px;">
+                            📧 Te enviaremos una confirmación a ${reservation.studentEmail}
+                        </p>
+                        <button class="btn-primary" onclick="app.page='home'; app.form.searchEmail=''; app.form.newBlockId=''; app.form.changeConfirm=false; render()" style="margin-top: 20px;">
+                            ← Volver al inicio
+                        </button>
+                    </div>
+                </div>
+            `;
+            appDiv.innerHTML = html;
+        }
+
         function renderStudent() {
             const selectedGroup = app.form.selectedGroup;
             const availableBlocks = app.blocks.filter(b => !b.reserved && b.group === selectedGroup);
             const hasReserved = app.reservations.some(r => r.studentEmail === (app.form.studentEmail || ''));
             const allGroups = [...new Set(app.blocks.map(b => b.group))].sort();
             const appDiv = document.getElementById('app');
+
+            // Pantalla de confirmación después de reservar
+            if (app.form.confirmationMessage) {
+                let html = `
+                    <div class="container" style="max-width: 600px;">
+                        <h2>✅ ¡Reserva Recibida!</h2>
+                        <div class="card" style="background: var(--bg-success); border: 2px solid var(--text-success); padding: 20px; text-align: center;">
+                            <h3 style="color: var(--text-success); margin-bottom: 15px;">Tu solicitud ha sido enviada</h3>
+                            <p style="font-size: 15px; line-height: 1.6;">
+                                <strong>Hola ${app.form.studentName},</strong><br><br>
+                                Tu elección ha sido recibida. Te agendaremos en alguno de los bloques elegidos 
+                                <strong>priorizando la primera escogida</strong>.<br><br>
+                                Te pedimos reserves por ahora <strong>ambas fechas/hora</strong> 
+                                y te confirmaremos cuál queda definitivamente en breve.
+                            </p>
+                            <p style="margin-top: 20px; color: var(--text-secondary); font-size: 14px;">
+                                Detalles de tu solicitud:<br>
+                                <strong>Grupo:</strong> ${selectedGroup}<br>
+                                <strong>Email:</strong> ${app.form.studentEmail}<br>
+                                <strong>Opción 1:</strong> ${app.form.option1Label || '—'}<br>
+                                <strong>Opción 2:</strong> ${app.form.option2Label || '—'}
+                            </p>
+                            <button class="btn-primary" onclick="app.form.selectedGroup=''; app.form.confirmationMessage=false; app.form.studentName=''; app.form.studentEmail=''; app.form.option1=''; app.form.option2=''; app.page='home'; render()" style="margin-top: 20px;">
+                                ← Volver al inicio
+                            </button>
+                        </div>
+                    </div>
+                `;
+                appDiv.innerHTML = html;
+                return;
+            }
             
             if (!selectedGroup) {
                 let html = `
@@ -377,8 +570,16 @@
 
             document.getElementById('studentName')?.addEventListener('input', (e) => { app.form.studentName = e.target.value; });
             document.getElementById('studentEmail')?.addEventListener('input', (e) => { app.form.studentEmail = e.target.value; });
-            document.getElementById('option1')?.addEventListener('change', (e) => { app.form.option1 = e.target.value; });
-            document.getElementById('option2')?.addEventListener('change', (e) => { app.form.option2 = e.target.value; });
+            document.getElementById('option1')?.addEventListener('change', (e) => { 
+                app.form.option1 = e.target.value;
+                const block = app.blocks.find(b => b.id == e.target.value);
+                app.form.option1Label = block ? `${block.date} ${block.time}` : '';
+            });
+            document.getElementById('option2')?.addEventListener('change', (e) => { 
+                app.form.option2 = e.target.value;
+                const block = app.blocks.find(b => b.id == e.target.value);
+                app.form.option2Label = block ? `${block.date} ${block.time}` : '';
+            });
         }
 
         function addBlock() {
@@ -500,10 +701,9 @@
                 time: new Date().toLocaleTimeString()
             });
 
-            app.form = {};
+            app.form.confirmationMessage = true;
             saveData();
-            document.getElementById('studentMsg').innerHTML = '<div class="alert alert-success">✅ Reserva confirmada</div>';
-            setTimeout(() => renderStudent(), 1500);
+            renderStudent();
         }
 
         function deleteBlock(id) {
