@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Agendamiento</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -134,44 +135,64 @@
     <div id="app"></div>
 
     <script>
+        // Inicializar Supabase
+        const SUPABASE_URL = 'https://tkwbpnpsyoixmfsgswlo.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRrd2JwbnBzeW9peG1mc2dzd2xvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5MTUwMTYsImV4cCI6MjEwMzQ5MTAxNn0.rTRxzhBcMRvJq_LkOu164_MAQNzYlYogIvv0Nm1BOy4';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
         // Estado
         let app = {
             page: 'home',
-            blocks: [
-                { id: 1001, group: 'Grupo A', date: '25/10/2024', time: '10:00-11:00', coach: 'Fernanda Riesle', reserved: false },
-                { id: 1002, group: 'Grupo A', date: '25/10/2024', time: '11:00-12:00', coach: 'Juan Pérez', reserved: false },
-                { id: 1003, group: 'Grupo A', date: '26/10/2024', time: '14:00-15:00', coach: 'María González', reserved: false },
-                { id: 1004, group: 'Grupo B', date: '25/10/2024', time: '15:00-16:00', coach: 'Carlos López', reserved: false },
-                { id: 1005, group: 'Grupo B', date: '26/10/2024', time: '10:00-11:00', coach: 'Ana Martínez', reserved: false },
-                { id: 1006, group: 'Grupo B', date: '27/10/2024', time: '11:00-12:00', coach: 'Roberto Silva', reserved: false }
-            ],
+            blocks: [],
             reservations: [],
             notifications: [],
             adminCode: '2024COACH',
-            form: {}
+            form: {},
+            loading: true
         };
 
-        // Cargar datos
-        function loadData() {
-            const saved = localStorage.getItem('schedulingData');
-            if (saved) {
-                try {
-                    const data = JSON.parse(saved);
-                    app.blocks = data.blocks || app.blocks;
-                    app.reservations = data.reservations || [];
-                } catch (e) { console.error(e); }
-            } else {
-                // Si no hay datos guardados, guardar los de prueba
-                saveData();
+        // Cargar datos desde Supabase
+        async function loadData() {
+            try {
+                app.loading = true;
+                
+                // Cargar bloques
+                const { data: blocksData, error: blocksError } = await supabase
+                    .from('blocks')
+                    .select('*');
+                
+                if (blocksError) throw blocksError;
+                app.blocks = blocksData || [];
+                
+                // Cargar reservas
+                const { data: reservationsData, error: reservationsError } = await supabase
+                    .from('reservations')
+                    .select('*');
+                
+                if (reservationsError) throw reservationsError;
+                app.reservations = reservationsData || [];
+                
+                // Cargar notificaciones
+                const { data: notificationsData, error: notificationsError } = await supabase
+                    .from('notifications')
+                    .select('*');
+                
+                if (notificationsError) throw notificationsError;
+                app.notifications = notificationsData || [];
+                
+                app.loading = false;
+                render();
+            } catch (error) {
+                console.error('Error cargando datos:', error);
+                app.loading = false;
+                render();
             }
         }
 
-        // Guardar datos
-        function saveData() {
-            localStorage.setItem('schedulingData', JSON.stringify({
-                blocks: app.blocks,
-                reservations: app.reservations
-            }));
+        // Guardar datos en Supabase
+        async function saveData() {
+            // Los datos se guardan automáticamente en cada operación
+            // Esta función se mantiene para compatibilidad
         }
 
         // Renderizar
@@ -289,17 +310,17 @@
                         <div>
                             <h3>Reservas por Grupo (${app.reservations.length})</h3>
                             ${app.reservations.length === 0 ? '<p>Sin reservas</p>' : `
-                                ${[...new Set(app.reservations.map(r => r.group))].sort().map(group => `
+                                ${[...new Set(app.reservations.map(r => r.group_name))].sort().map(group => `
                                     <div style="margin-bottom: 20px; padding: 15px; background: var(--surface-1); border-radius: 4px; border-left: 4px solid var(--fill-accent);">
-                                        <h4 style="margin-bottom: 10px; color: var(--fill-accent);">📌 ${group} (${app.reservations.filter(r => r.group === group).length} reserva${app.reservations.filter(r => r.group === group).length !== 1 ? 's' : ''})</h4>
+                                        <h4 style="margin-bottom: 10px; color: var(--fill-accent);">📌 ${group} (${app.reservations.filter(r => r.group_name === group).length} reserva${app.reservations.filter(r => r.group_name === group).length !== 1 ? 's' : ''})</h4>
                                         <div class="scroll-list">
-                                            ${app.reservations.filter(r => r.group === group).map(r => `
+                                            ${app.reservations.filter(r => r.group_name === group).map(r => `
                                                 <div class="card" style="margin-bottom: 0;">
-                                                    <strong>${r.studentName}</strong><br>
-                                                    ${r.studentEmail}<br>
-                                                    <small>📌 <strong>Confirmada:</strong> ${r.blockDate} ${r.blockTime} (${r.coach})</small><br>
-                                                    <small><strong>Opción 1:</strong> ${r.option1Date || '—'} ${r.option1 || '—'}</small><br>
-                                                    <small><strong>Opción 2:</strong> ${r.option2Date || '—'} ${r.option2 || '—'}</small><br>
+                                                    <strong>${r.student_name}</strong><br>
+                                                    ${r.student_email}<br>
+                                                    <small>📌 <strong>Confirmada:</strong> ${r.block_date} ${r.block_time} (${r.coach})</small><br>
+                                                    <small><strong>Opción 1:</strong> ${r.option1_date || '—'} ${r.option1 || '—'}</small><br>
+                                                    <small><strong>Opción 2:</strong> ${r.option2_date || '—'} ${r.option2 || '—'}</small><br>
                                                     <button class="btn-primary" onclick="sendEmail(${r.id})">✉️ Email</button>
                                                     <button class="btn-secondary" onclick="copyEmail(${r.id})">📋 Copiar</button>
                                                     <button class="btn-danger" onclick="deleteReservation(${r.id})">Cancelar</button>
@@ -358,7 +379,7 @@
             }
 
             // Mostrar reserva actual y opciones para cambiar
-            const availableBlocks = app.blocks.filter(b => b.group === currentReservation.group && !b.reserved);
+            const availableBlocks = app.blocks.filter(b => b.group_name === currentReservation.group_name && !b.reserved);
             
             let html = `
                 <div class="container" style="max-width: 600px;">
@@ -368,12 +389,12 @@
 
                     <div class="card" style="background: var(--bg-warning); border-left: 4px solid #856404; margin-bottom: 20px;">
                         <h3>Tu Reserva Actual</h3>
-                        <p><strong>Nombre:</strong> ${currentReservation.studentName}</p>
-                        <p><strong>Grupo:</strong> ${currentReservation.group}</p>
-                        <p><strong>📌 Sesión Confirmada:</strong> ${currentReservation.blockDate} ${currentReservation.blockTime} (${currentReservation.coach})</p>
+                        <p><strong>Nombre:</strong> ${currentReservation.student_name}</p>
+                        <p><strong>Grupo:</strong> ${currentReservation.group_name}</p>
+                        <p><strong>📌 Sesión Confirmada:</strong> ${currentReservation.block_date} ${currentReservation.block_time} (${currentReservation.coach})</p>
                         <p style="font-size: 13px; margin-top: 10px;">
-                            <strong>Opción 1:</strong> ${currentReservation.option1Date || '—'} ${currentReservation.option1 || '—'}<br>
-                            <strong>Opción 2:</strong> ${currentReservation.option2Date || '—'} ${currentReservation.option2 || '—'}
+                            <strong>Opción 1:</strong> ${currentReservation.option1_date || '—'} ${currentReservation.option1 || '—'}<br>
+                            <strong>Opción 2:</strong> ${currentReservation.option2_date || '—'} ${currentReservation.option2 || '—'}
                         </p>
                     </div>
 
@@ -415,7 +436,7 @@
                 document.getElementById('changeMsg').innerHTML = '<div class="alert alert-danger">Ingresa tu email</div>';
                 return;
             }
-            const reservation = app.reservations.find(r => r.studentEmail === email);
+            const reservation = app.reservations.find(r => r.student_email === email);
             if (!reservation) {
                 document.getElementById('changeMsg').innerHTML = '<div class="alert alert-danger">No encontramos una reserva con este email</div>';
                 return;
@@ -466,7 +487,7 @@
             renderChangeReservationConfirm(oldReservation);
         }
 
-        function confirmChangeOptions(reservationId) {
+        async function confirmChangeOptions(reservationId) {
             const newOption1 = app.form.newOption1;
             const newOption2 = app.form.newOption2;
 
@@ -489,25 +510,43 @@
                 return;
             }
 
-            // Actualizar la reserva con las nuevas opciones
-            oldReservation.option1 = block1?.time || null;
-            oldReservation.option1Date = block1?.date || null;
-            oldReservation.option2 = block2?.time || null;
-            oldReservation.option2Date = block2?.date || null;
+            try {
+                // Actualizar la reserva en Supabase
+                const { error } = await supabase
+                    .from('reservations')
+                    .update({
+                        option1: block1?.time || null,
+                        option1_date: block1?.date || null,
+                        option2: block2?.time || null,
+                        option2_date: block2?.date || null
+                    })
+                    .eq('id', reservationId);
+                
+                if (error) throw error;
 
-            // Agregar notificación
-            app.notifications.push({
-                id: Date.now(),
-                message: `${oldReservation.studentName} (${oldReservation.group}) cambió sus opciones`,
-                time: new Date().toLocaleTimeString()
-            });
+                // Actualizar localmente
+                oldReservation.option1 = block1?.time || null;
+                oldReservation.option1_date = block1?.date || null;
+                oldReservation.option2 = block2?.time || null;
+                oldReservation.option2_date = block2?.date || null;
 
-            saveData();
+                // Agregar notificación
+                await supabase
+                    .from('notifications')
+                    .insert([{
+                        id: Date.now() + Math.random(),
+                        message: `${oldReservation.student_name} (${oldReservation.group_name}) cambió sus opciones`,
+                        time: new Date().toLocaleTimeString()
+                    }]);
 
-            // Mostrar confirmación
-            app.form.changeConfirm = true;
-            app.form.changedOptionsInfo = `Opción 1: ${block1?.date || '—'} ${block1?.time || '—'} | Opción 2: ${block2?.date || '—'} ${block2?.time || '—'}`;
-            renderChangeOptionsConfirm(oldReservation);
+                // Mostrar confirmación
+                app.form.changeConfirm = true;
+                app.form.changedOptionsInfo = `Opción 1: ${block1?.date || '—'} ${block1?.time || '—'} | Opción 2: ${block2?.date || '—'} ${block2?.time || '—'}`;
+                renderChangeOptionsConfirm(oldReservation);
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('changeMsg').innerHTML = '<div class="alert alert-danger">Error al cambiar opciones</div>';
+            }
         }
 
         function renderChangeOptionsConfirm(reservation) {
@@ -518,13 +557,13 @@
                     <div class="card" style="background: var(--bg-success); border: 2px solid var(--text-success); padding: 20px; text-align: center;">
                         <h3 style="color: var(--text-success); margin-bottom: 15px;">Tus opciones han sido actualizadas</h3>
                         <p style="font-size: 15px; line-height: 1.6;">
-                            <strong>Hola ${reservation.studentName},</strong><br><br>
+                            <strong>Hola ${reservation.student_name},</strong><br><br>
                             Tus nuevas opciones han sido registradas exitosamente.<br><br>
                             <strong>Tus nuevas opciones:</strong><br>
                             📋 ${app.form.changedOptionsInfo}
                         </p>
                         <p style="margin-top: 20px; color: var(--text-secondary); font-size: 13px;">
-                            📧 Te enviaremos una confirmación a ${reservation.studentEmail}
+                            📧 Te enviaremos una confirmación a ${reservation.student_email}
                         </p>
                         <button class="btn-primary" onclick="app.page='home'; app.form.searchEmail=''; app.form.newOption1=''; app.form.newOption2=''; app.form.changeConfirm=false; render()" style="margin-top: 20px;">
                             ← Volver al inicio
@@ -543,13 +582,13 @@
                     <div class="card" style="background: var(--bg-success); border: 2px solid var(--text-success); padding: 20px; text-align: center;">
                         <h3 style="color: var(--text-success); margin-bottom: 15px;">Tu reserva ha sido cambiada</h3>
                         <p style="font-size: 15px; line-height: 1.6;">
-                            <strong>Hola ${reservation.studentName},</strong><br><br>
+                            <strong>Hola ${reservation.student_name},</strong><br><br>
                             Tu cambio de sesión ha sido procesado exitosamente.<br><br>
                             <strong>Tu nueva sesión:</strong><br>
                             📅 ${app.form.changedBlockInfo}
                         </p>
                         <p style="margin-top: 20px; color: var(--text-secondary); font-size: 13px;">
-                            📧 Te enviaremos una confirmación a ${reservation.studentEmail}
+                            📧 Te enviaremos una confirmación a ${reservation.student_email}
                         </p>
                         <button class="btn-primary" onclick="app.page='home'; app.form.searchEmail=''; app.form.newBlockId=''; app.form.changeConfirm=false; render()" style="margin-top: 20px;">
                             ← Volver al inicio
@@ -678,7 +717,7 @@
             });
         }
 
-        function addBlock() {
+        async function addBlock() {
             const group = document.getElementById('blockGroup').value;
             const date = document.getElementById('blockDate').value;
             const time = document.getElementById('blockTime').value;
@@ -688,17 +727,29 @@
                 return;
             }
             const dateObj = new Date(date).toLocaleDateString('es-ES');
-            app.blocks.push({ id: Date.now(), group, date: dateObj, time, coach, reserved: false });
-            saveData();
-            document.getElementById('blockGroup').value = '';
-            document.getElementById('blockDate').value = '';
-            document.getElementById('blockTime').value = '';
-            document.getElementById('blockCoach').value = '';
-            document.getElementById('blockMsg').innerHTML = '<div class="alert alert-success">Bloque creado</div>';
-            setTimeout(() => renderAdmin(), 500);
+            const blockId = Date.now();
+            
+            try {
+                const { error } = await supabase
+                    .from('blocks')
+                    .insert([{ id: blockId, group_name: group, date: dateObj, time, coach, reserved: false }]);
+                
+                if (error) throw error;
+                
+                app.blocks.push({ id: blockId, group, date: dateObj, time, coach, reserved: false });
+                document.getElementById('blockGroup').value = '';
+                document.getElementById('blockDate').value = '';
+                document.getElementById('blockTime').value = '';
+                document.getElementById('blockCoach').value = '';
+                document.getElementById('blockMsg').innerHTML = '<div class="alert alert-success">Bloque creado</div>';
+                setTimeout(() => renderAdmin(), 500);
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('blockMsg').innerHTML = '<div class="alert alert-danger">Error al crear bloque</div>';
+            }
         }
 
-        function importBlocks() {
+        async function importBlocks() {
             const data = document.getElementById('importData').value;
             if (!data.trim()) {
                 document.getElementById('importMsg').innerHTML = '<div class="alert alert-danger">Pega datos primero</div>';
@@ -708,6 +759,7 @@
             const lines = data.trim().split('\n');
             let imported = 0;
             let errors = 0;
+            const blocksToInsert = [];
 
             lines.forEach(line => {
                 const parts = line.split('\t');
@@ -717,7 +769,14 @@
                     const time = parts[2].trim();
                     const coach = parts[3].trim();
                     if (group && date && time && coach) {
-                        app.blocks.push({ id: Date.now() + Math.random(), group, date, time, coach, reserved: false });
+                        blocksToInsert.push({ 
+                            id: Date.now() + Math.random(), 
+                            group_name: group, 
+                            date, 
+                            time, 
+                            coach, 
+                            reserved: false 
+                        });
                         imported++;
                     }
                 } else {
@@ -726,10 +785,32 @@
             });
 
             if (imported > 0) {
-                saveData();
-                document.getElementById('importMsg').innerHTML = `<div class="alert alert-success">✅ Importados ${imported} bloques ${errors > 0 ? `(${errors} errores)` : ''}</div>`;
-                document.getElementById('importData').value = '';
-                setTimeout(() => renderAdmin(), 800);
+                try {
+                    const { error } = await supabase
+                        .from('blocks')
+                        .insert(blocksToInsert);
+                    
+                    if (error) throw error;
+                    
+                    // Actualizar app.blocks localmente
+                    blocksToInsert.forEach(b => {
+                        app.blocks.push({ 
+                            id: b.id, 
+                            group: b.group_name, 
+                            date: b.date, 
+                            time: b.time, 
+                            coach: b.coach, 
+                            reserved: false 
+                        });
+                    });
+                    
+                    document.getElementById('importMsg').innerHTML = `<div class="alert alert-success">✅ Importados ${imported} bloques ${errors > 0 ? `(${errors} errores)` : ''}</div>`;
+                    document.getElementById('importData').value = '';
+                    setTimeout(() => renderAdmin(), 800);
+                } catch (error) {
+                    console.error('Error:', error);
+                    document.getElementById('importMsg').innerHTML = '<div class="alert alert-danger">Error al importar bloques</div>';
+                }
             } else {
                 document.getElementById('importMsg').innerHTML = '<div class="alert alert-danger">No se pudieron importar. Formato: Grupo [TAB] Fecha [TAB] Hora [TAB] Coach</div>';
             }
@@ -749,7 +830,7 @@
             XLSX.writeFile(wb, 'bloques_agendamiento.xlsx');
         }
 
-        function makeReservation() {
+        async function makeReservation() {
             const name = document.getElementById('studentName').value;
             const email = document.getElementById('studentEmail').value;
             const opt1 = document.getElementById('option1').value;
@@ -765,7 +846,7 @@
                 return;
             }
 
-            if (app.reservations.some(r => r.studentEmail === email)) {
+            if (app.reservations.some(r => r.student_email === email)) {
                 document.getElementById('studentMsg').innerHTML = '<div class="alert alert-danger">Ya tienes una reserva</div>';
                 return;
             }
@@ -780,65 +861,145 @@
                 return;
             }
 
-            app.reservations.push({
-                id: Date.now(),
-                blockId: selected.id,
-                group: selected.group,
-                blockDate: selected.date,
-                blockTime: selected.time,
-                coach: selected.coach,
-                studentName: name,
-                studentEmail: email,
-                option1: block1?.time || null,
-                option1Date: block1?.date || null,
-                option2: block2?.time || null,
-                option2Date: block2?.date || null,
-                date: new Date().toLocaleDateString(),
-                timestamp: new Date().toLocaleTimeString()
-            });
-
-            app.blocks.find(b => b.id === selected.id).reserved = true;
-            app.notifications.push({
-                id: Date.now(),
-                message: `${name} (${selected.group}) reservó ${selected.date} ${selected.time}`,
-                time: new Date().toLocaleTimeString()
-            });
-
-            app.form.confirmationMessage = true;
-            saveData();
-            renderStudent();
+            try {
+                const reservationId = Date.now();
+                
+                // Insertar reserva
+                const { error: resError } = await supabase
+                    .from('reservations')
+                    .insert([{
+                        id: reservationId,
+                        block_id: selected.id,
+                        group_name: selected.group,
+                        block_date: selected.date,
+                        block_time: selected.time,
+                        coach: selected.coach,
+                        student_name: name,
+                        student_email: email,
+                        option1: block1?.time || null,
+                        option1_date: block1?.date || null,
+                        option2: block2?.time || null,
+                        option2_date: block2?.date || null,
+                        date_created: new Date().toLocaleDateString(),
+                        timestamp: new Date().toLocaleTimeString()
+                    }]);
+                
+                if (resError) throw resError;
+                
+                // Actualizar bloque como reserved
+                const { error: blockError } = await supabase
+                    .from('blocks')
+                    .update({ reserved: true })
+                    .eq('id', selected.id);
+                
+                if (blockError) throw blockError;
+                
+                // Insertar notificación
+                const { error: notifError } = await supabase
+                    .from('notifications')
+                    .insert([{
+                        id: Date.now() + Math.random(),
+                        message: `${name} (${selected.group}) reservó ${selected.date} ${selected.time}`,
+                        time: new Date().toLocaleTimeString()
+                    }]);
+                
+                if (notifError) throw notifError;
+                
+                // Actualizar estado local
+                app.reservations.push({
+                    id: reservationId,
+                    block_id: selected.id,
+                    group_name: selected.group,
+                    block_date: selected.date,
+                    block_time: selected.time,
+                    coach: selected.coach,
+                    student_name: name,
+                    student_email: email,
+                    option1: block1?.time || null,
+                    option1_date: block1?.date || null,
+                    option2: block2?.time || null,
+                    option2_date: block2?.date || null,
+                    date_created: new Date().toLocaleDateString(),
+                    timestamp: new Date().toLocaleTimeString()
+                });
+                
+                app.blocks.find(b => b.id === selected.id).reserved = true;
+                
+                app.form.confirmationMessage = true;
+                renderStudent();
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('studentMsg').innerHTML = '<div class="alert alert-danger">Error al hacer la reserva</div>';
+            }
         }
 
-        function deleteBlock(id) {
-            app.blocks = app.blocks.filter(b => b.id !== id);
-            app.reservations = app.reservations.filter(r => r.blockId !== id);
-            saveData();
-            renderAdmin();
+        async function deleteBlock(id) {
+            try {
+                // Borrar reservas asociadas
+                await supabase
+                    .from('reservations')
+                    .delete()
+                    .eq('block_id', id);
+                
+                // Borrar bloque
+                const { error } = await supabase
+                    .from('blocks')
+                    .delete()
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
+                app.blocks = app.blocks.filter(b => b.id !== id);
+                app.reservations = app.reservations.filter(r => r.block_id !== id);
+                renderAdmin();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al eliminar bloque');
+            }
         }
 
-        function deleteReservation(id) {
+        async function deleteReservation(id) {
             const res = app.reservations.find(r => r.id === id);
             if (res) {
-                app.reservations = app.reservations.filter(r => r.id !== id);
-                app.blocks.find(b => b.id === res.blockId).reserved = false;
-                saveData();
-                renderAdmin();
+                try {
+                    // Liberar el bloque
+                    await supabase
+                        .from('blocks')
+                        .update({ reserved: false })
+                        .eq('id', res.block_id);
+                    
+                    // Borrar reserva
+                    const { error } = await supabase
+                        .from('reservations')
+                        .delete()
+                        .eq('id', id);
+                    
+                    if (error) throw error;
+                    
+                    app.reservations = app.reservations.filter(r => r.id !== id);
+                    const block = app.blocks.find(b => b.id === res.block_id);
+                    if (block) block.reserved = false;
+                    renderAdmin();
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error al cancelar reserva');
+                }
             }
         }
 
         function sendEmail(id) {
             const res = app.reservations.find(r => r.id === id);
             if (res) {
-                const subject = `✅ Confirmación - ${res.coach} (${res.group})`;
-                const body = `Hola ${res.studentName},\n\n✅ Reserva confirmada\n\n👥 Grupo: ${res.group}\n📅 Fecha: ${res.blockDate}\n⏰ Hora: ${res.blockTime}\n👨‍🏫 Coach: ${res.coach}\n\nOpciones elegidas:\nOpción 1: ${res.option1Date || '—'} ${res.option1 || '—'}\nOpción 2: ${res.option2Date || '—'} ${res.option2 || '—'}\n\n¡Nos vemos pronto!`;
-                window.location.href = `mailto:${res.studentEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                const subject = `✅ Confirmación - ${res.coach} (${res.group_name})`;
+                const body = `Hola ${res.student_name},\n\n✅ Reserva confirmada\n\n👥 Grupo: ${res.group_name}\n📅 Fecha: ${res.block_date}\n⏰ Hora: ${res.block_time}\n👨‍🏫 Coach: ${res.coach}\n\nOpciones elegidas:\nOpción 1: ${res.option1_date || '—'} ${res.option1 || '—'}\nOpción 2: ${res.option2_date || '—'} ${res.option2 || '—'}\n\n¡Nos vemos pronto!`;
+                window.location.href = `mailto:${res.student_email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
             }
         }
 
         function copyEmail(id) {
             const res = app.reservations.find(r => r.id === id);
             if (res) {
-                const text = `Hola ${res.studentName},\n\n✅ Reserva confirmada\n\n👥 Grupo: ${res.group}\n📅 Fecha: ${res.blockDate}\n⏰ Hora: ${res.blockTime}\n👨‍🏫 Coach: ${res.coach}\n\nOpciones elegidas:\nOpción 1: ${res.option1Date || '—'} ${res.option1 || '—'}\nOpción 2: ${res.option2Date || '—'} ${res.option2 || '—'}\n\n¡Nos vemos pronto!`;
+                const text = `Hola ${res.student_name},\n\n✅ Reserva confirmada\n\n👥 Grupo: ${res.group_name}\n📅 Fecha: ${res.block_date}\n⏰ Hora: ${res.block_time}\n👨‍🏫 Coach: ${res.coach}\n\nOpciones elegidas:\nOpción 1: ${res.option1_date || '—'} ${res.option1 || '—'}\nOpción 2: ${res.option2_date || '—'} ${res.option2 || '—'}\n\n¡Nos vemos pronto!`;
                 navigator.clipboard.writeText(text);
                 alert('Email copiado');
             }
@@ -846,15 +1007,15 @@
 
         function exportToExcel() {
             const data = app.reservations.map(r => ({
-                Grupo: r.group,
-                Nombre: r.studentName,
-                Email: r.studentEmail,
+                Grupo: r.group_name,
+                Nombre: r.student_name,
+                Email: r.student_email,
                 'Opción 1': r.option1 || '—',
                 'Opción 2': r.option2 || '—',
-                Fecha: r.blockDate,
-                Hora: r.blockTime,
+                Fecha: r.block_date,
+                Hora: r.block_time,
                 Coach: r.coach,
-                'Fecha Reserva': r.date,
+                'Fecha Reserva': r.date_created,
                 'Hora Reserva': r.timestamp
             }));
             const ws = XLSX.utils.json_to_sheet(data);
